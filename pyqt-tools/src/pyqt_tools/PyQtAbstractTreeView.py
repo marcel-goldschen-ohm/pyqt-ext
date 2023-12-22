@@ -6,8 +6,7 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_tools.PyQtAbstractTreeItem import AbstractTreeItem
-from pyqt_tools.PyQtAbstractTreeModel import AbstractTreeModel
+from pyqt_tools import AbstractTreeItem, AbstractTreeModel
 
 
 class AbstractTreeView(QTreeView):
