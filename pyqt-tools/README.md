@@ -8,6 +8,7 @@
 - [PyQtKeyValueTreeModel](#pyqtkeyvaluetreemodel)
 - [PyQtKeyValueTreeView](#pyqtkeyvaluetreeview)
 - [PyQtMultiValueSpinBox](#pyqtmultivaluespinbox)
+- [PyQtXYDataStyle](#pyqtxydatastyle)
 
 # PyQtAbstractTreeItem
 :construction:
@@ -45,6 +46,11 @@
 [go to top](#pyqt-tools)
 
 # PyQtMultiValueSpinBox
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtXYDataStyle
 :construction:
 
 [go to top](#pyqt-tools)
