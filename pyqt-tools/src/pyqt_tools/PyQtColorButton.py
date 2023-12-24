@@ -10,6 +10,8 @@ from qtpy.QtWidgets import *
 class ColorButton(QToolButton):
     """ Button for selecting and displaying a color.
     """
+
+    colorChanged = Signal(QColor)
     
     def __init__(self, color = QColor('transparent')):
         QToolButton.__init__(self)
@@ -22,6 +24,7 @@ class ColorButton(QToolButton):
     def setColor(self, color: QColor):
         self.setStyleSheet(f'background-color: rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()}); border: 1px solid black;')
         self._color = color
+        self.colorChanged.emit(color)
     
     def pickColor(self):
         color = QColorDialog.getColor(self.color(), None, "Select Color", options=QColorDialog.ShowAlphaChannel)

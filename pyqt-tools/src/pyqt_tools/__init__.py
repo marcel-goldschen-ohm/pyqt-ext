@@ -6,3 +6,4 @@ from pyqt_tools.PyQtKeyValueTreeItem import KeyValueTreeItem
 from pyqt_tools.PyQtKeyValueTreeModel import KeyValueTreeModel
 from pyqt_tools.PyQtKeyValueTreeView import KeyValueTreeView
 from pyqt_tools.PyQtMultiValueSpinBox import MultiValueSpinBox
+from pyqt_tools.PyQtXYDataStyle import XYDataStyleDict, XYDataStylePanel, editXYDataStyle
