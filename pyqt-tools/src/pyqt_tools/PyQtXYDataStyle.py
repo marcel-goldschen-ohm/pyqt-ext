@@ -163,30 +163,11 @@ class XYDataStylePanel(QWidget):
 
         self._style = XYDataStyleDict()
 
-        self.formLayout = QFormLayout(self)
+        self.vboxLayout = QVBoxLayout(self)
 
-        # Qt.PenStyle.NoPen = 0
-        # Qt.PenStyle.SolidLine = 1
-        # Qt.PenStyle.DashLine = 2
-        # Qt.PenStyle.DotLine = 3
-        # Qt.PenStyle.DashDotLine = 4
-        self.lineStyles = ['none', '-', '--', ':', '-.']
-        self.lineStyleComboBox = QComboBox()
-        self.lineStyleComboBox.addItems(['No Line', 'Solid Line', 'Dash Line', 'Dot Line', 'Dash Dot Line'])
-        try:
-            self.lineStyleComboBox.setCurrentIndex(self.lineStyles.index(self._style.line_style))
-        except:
-            self.lineStyleComboBox.setCurrentIndex(1)
-        self.lineStyleComboBox.currentIndexChanged.connect(self.onLineStyleChanged)
-        self.formLayout.addRow('Line Style', self.lineStyleComboBox)
-        self.lineStyleRow = self.formLayout.rowCount() - 1
-
-        self.lineWidthSpinBox = QDoubleSpinBox()
-        self.lineWidthSpinBox.setMinimum(0)
-        self.lineWidthSpinBox.setValue(self._style.line_width)
-        self.lineWidthSpinBox.valueChanged.connect(self.onLineWidthChanged)
-        self.formLayout.addRow('Line Width', self.lineWidthSpinBox)
-        self.lineWidthRow = self.formLayout.rowCount() - 1
+        # color
+        self.colorGroupBox = QGroupBox('Color')
+        self.colorFormLayout = QFormLayout(self.colorGroupBox)
 
         color = self._style.color
         qcolor = XYDataStyleDict.color_to_qcolor(color)
@@ -200,10 +181,42 @@ class XYDataStylePanel(QWidget):
         colorLayout.setSpacing(5)
         colorLayout.addWidget(self.colorButton)
         colorLayout.addWidget(self.autoColorCheckBox)
-        self.formLayout.addRow('Color', colorLayout)
+        self.colorFormLayout.addRow('Color', colorLayout)
         self.colorButton.setVisible(not self.autoColorCheckBox.isChecked())
-        self.colorRow = self.formLayout.rowCount() - 1
-        # self.onColorChanged()
+
+        self.vboxLayout.addWidget(self.colorGroupBox)
+
+        # line
+        self.lineGroupBox = QGroupBox('Line')
+        self.lineFormLayout = QFormLayout(self.lineGroupBox)
+        
+        # Qt.PenStyle.NoPen = 0
+        # Qt.PenStyle.SolidLine = 1
+        # Qt.PenStyle.DashLine = 2
+        # Qt.PenStyle.DotLine = 3
+        # Qt.PenStyle.DashDotLine = 4
+        self.lineStyles = ['none', '-', '--', ':', '-.']
+        self.lineStyleComboBox = QComboBox()
+        self.lineStyleComboBox.addItems(['No Line', 'Solid Line', 'Dash Line', 'Dot Line', 'Dash Dot Line'])
+        try:
+            self.lineStyleComboBox.setCurrentIndex(self.lineStyles.index(self._style.line_style))
+        except:
+            self.lineStyleComboBox.setCurrentIndex(1)
+        self.lineStyleComboBox.currentIndexChanged.connect(self.onLineStyleChanged)
+        self.lineFormLayout.addRow('Style', self.lineStyleComboBox)
+        
+        self.lineWidthSpinBox = QDoubleSpinBox()
+        self.lineWidthSpinBox.setMinimum(0)
+        self.lineWidthSpinBox.setValue(self._style.line_width)
+        self.lineWidthSpinBox.valueChanged.connect(self.onLineWidthChanged)
+        self.lineFormLayout.addRow('Width', self.lineWidthSpinBox)
+
+        self.vboxLayout.addWidget(self.lineGroupBox)
+        self.onLineStyleChanged()
+
+        # marker
+        self.markerGroupBox = QGroupBox('Marker')
+        self.markerFormLayout = QFormLayout(self.markerGroupBox)
 
         # pyqtgraph default markers
         self.markers = ['none', 'o', 't', 't1', 't2', 't3', 's', 'p', 'h', 'star', '+', 'd', 'x']
@@ -216,22 +229,19 @@ class XYDataStylePanel(QWidget):
         except:
             self.markerComboBox.setCurrentIndex(0)
         self.markerComboBox.currentIndexChanged.connect(self.onMarkerChanged)
-        self.formLayout.addRow('Marker', self.markerComboBox)
-        self.markerRow = self.formLayout.rowCount() - 1
+        self.markerFormLayout.addRow('Marker', self.markerComboBox)
 
         self.markerSizeSpinBox = QDoubleSpinBox()
         self.markerSizeSpinBox.setMinimum(0)
         self.markerSizeSpinBox.setValue(self._style.marker_size)
         self.markerSizeSpinBox.valueChanged.connect(self.onMarkerSizeChanged)
-        self.formLayout.addRow('Marker Size', self.markerSizeSpinBox)
-        self.markerSizeRow = self.formLayout.rowCount() - 1
+        self.markerFormLayout.addRow('Size', self.markerSizeSpinBox)
 
         self.markerEdgeWidthSpinBox = QDoubleSpinBox()
         self.markerEdgeWidthSpinBox.setMinimum(0)
         self.markerEdgeWidthSpinBox.setValue(self._style.marker_edge_width)
         self.markerEdgeWidthSpinBox.valueChanged.connect(self.onMarkerEdgeWidthChanged)
-        self.formLayout.addRow('Marker Edge Width', self.markerEdgeWidthSpinBox)
-        self.markerEdgeWidthRow = self.formLayout.rowCount() - 1
+        self.markerFormLayout.addRow('Edge Width', self.markerEdgeWidthSpinBox)
 
         markerEdgeColor = self._style.marker_edge_color
         markerEdgeQColor = XYDataStyleDict.color_to_qcolor(markerEdgeColor)
@@ -245,10 +255,8 @@ class XYDataStylePanel(QWidget):
         markerEdgeColorLayout.setSpacing(5)
         markerEdgeColorLayout.addWidget(self.markerEdgeColorButton)
         markerEdgeColorLayout.addWidget(self.autoMarkerEdgeColorCheckBox)
-        self.formLayout.addRow('Marker Edge Color', markerEdgeColorLayout)
+        self.markerFormLayout.addRow('Edge Color', markerEdgeColorLayout)
         self.markerEdgeColorButton.setVisible(not self.autoMarkerEdgeColorCheckBox.isChecked())
-        self.markerEdgeColorRow = self.formLayout.rowCount() - 1
-        # self.onMarkerEdgeColorChanged()
 
         markerFaceColor = self._style.marker_face_color
         markerFaceQColor = XYDataStyleDict.color_to_qcolor(markerFaceColor)
@@ -262,14 +270,13 @@ class XYDataStylePanel(QWidget):
         markerFaceColorLayout.setSpacing(5)
         markerFaceColorLayout.addWidget(self.markerFaceColorButton)
         markerFaceColorLayout.addWidget(self.autoMarkerFaceColorCheckBox)
-        self.formLayout.addRow('Marker Face Color', markerFaceColorLayout)
+        self.markerFormLayout.addRow('Face Color', markerFaceColorLayout)
         self.markerFaceColorButton.setVisible(not self.autoMarkerFaceColorCheckBox.isChecked())
-        self.markerFaceColorRow = self.formLayout.rowCount() - 1
-        # self.onMarkerFaceColorChanged()
 
-        # update visibility depending on style
-        self.onLineStyleChanged()
+        self.vboxLayout.addWidget(self.markerGroupBox)
         self.onMarkerChanged()
+
+        self.vboxLayout.addStretch()
     
     def style(self) -> XYDataStyleDict:
         return self._style
@@ -318,7 +325,7 @@ class XYDataStylePanel(QWidget):
         self._style.line_style = self.lineStyles[self.lineStyleComboBox.currentIndex()]
         try:
             isLine: bool = not (self._style.line_style == 'none')
-            self.formLayout.setRowVisible(self.lineWidthRow, isLine)
+            self.lineFormLayout.setRowVisible(1, isLine)
         except:
             # above only works in PyQt6
             pass
@@ -342,15 +349,13 @@ class XYDataStylePanel(QWidget):
         self._style.marker = self.markers[self.markerComboBox.currentIndex()]
         try:
             isMarker: bool = not (self._style.marker == 'none')
-            self.formLayout.setRowVisible(self.markerSizeRow, isMarker)
-            self.formLayout.setRowVisible(self.markerEdgeWidthRow, isMarker)
-            self.formLayout.setRowVisible(self.markerEdgeColorRow, isMarker)
-            self.formLayout.setRowVisible(self.markerFaceColorRow, isMarker)
-            self.markerEdgeColorButton.setVisible(not self.autoMarkerEdgeColorCheckBox.isChecked())
-            self.markerFaceColorButton.setVisible(not self.autoMarkerFaceColorCheckBox.isChecked())
+            for row in range(1, self.markerFormLayout.rowCount()):
+                self.markerFormLayout.setRowVisible(row, isMarker)
         except:
             # above only works in PyQt6
             pass
+        self.markerEdgeColorButton.setVisible(not self.autoMarkerEdgeColorCheckBox.isChecked())
+        self.markerFaceColorButton.setVisible(not self.autoMarkerFaceColorCheckBox.isChecked())
     
     @Slot()
     def onMarkerSizeChanged(self):
