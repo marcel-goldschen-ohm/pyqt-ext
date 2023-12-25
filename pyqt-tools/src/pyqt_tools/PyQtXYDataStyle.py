@@ -1,6 +1,6 @@
 """ Widget for editing the style of (x,y) data.
 
-TODO: Add plot styles (e.g., line, histogram, bar, etc.).
+Style is stored in hashable dict.
 """
 
 from qtpy.QtCore import *
@@ -15,9 +15,9 @@ ColorType = str | tuple[int | float] | list[int | float] | QColor
 class XYDataStyleDict(dict):
     """ Hashable style dict for (x,y) data.
 
+    'Color': str
     'LineStyle': str
     'LineWidth': float
-    'Color': str
     'Marker': str
     'MarkerSize': float
     'MarkerEdgeWidth': float
@@ -40,6 +40,14 @@ class XYDataStyleDict(dict):
         self.markers = ['none', 'o', 't', 't1', 't2', 't3', 's', 'p', 'h', 'star', '+', 'd', 'x']
     
     @property
+    def color(self) -> str:
+        return self.get('Color', 'auto')
+    
+    @color.setter
+    def color(self, value: ColorType):
+        self['Color'] = XYDataStyleDict.color_to_str(value)
+    
+    @property
     def line_style(self) -> str:
         return self.get('LineStyle', '-')
     
@@ -56,14 +64,6 @@ class XYDataStyleDict(dict):
     @line_width.setter
     def line_width(self, value: float):
         self['LineWidth'] = value
-    
-    @property
-    def color(self) -> str:
-        return self.get('Color', 'auto')
-    
-    @color.setter
-    def color(self, value: ColorType):
-        self['Color'] = XYDataStyleDict.color_to_str(value)
     
     @property
     def marker(self) -> str:
@@ -170,7 +170,10 @@ class XYDataStylePanel(QWidget):
         self.colorFormLayout = QFormLayout(self.colorGroupBox)
 
         color = self._style.color
-        qcolor = XYDataStyleDict.color_to_qcolor(color)
+        if color == 'auto':
+            qcolor = QColor(0, 114, 189)
+        else:
+            qcolor = XYDataStyleDict.color_to_qcolor(color)
         self.colorButton = ColorButton(qcolor)
         self.colorButton.colorChanged.connect(self.onColorChanged)
         self.autoColorCheckBox = QCheckBox('Auto')
@@ -244,7 +247,10 @@ class XYDataStylePanel(QWidget):
         self.markerFormLayout.addRow('Edge Width', self.markerEdgeWidthSpinBox)
 
         markerEdgeColor = self._style.marker_edge_color
-        markerEdgeQColor = XYDataStyleDict.color_to_qcolor(markerEdgeColor)
+        if markerEdgeColor == 'auto':
+            markerEdgeQColor = qcolor
+        else:
+            markerEdgeQColor = XYDataStyleDict.color_to_qcolor(markerEdgeColor)
         self.markerEdgeColorButton = ColorButton(markerEdgeQColor)
         self.markerEdgeColorButton.colorChanged.connect(self.onMarkerEdgeColorChanged)
         self.autoMarkerEdgeColorCheckBox = QCheckBox('Auto')
@@ -259,7 +265,10 @@ class XYDataStylePanel(QWidget):
         self.markerEdgeColorButton.setVisible(not self.autoMarkerEdgeColorCheckBox.isChecked())
 
         markerFaceColor = self._style.marker_face_color
-        markerFaceQColor = XYDataStyleDict.color_to_qcolor(markerFaceColor)
+        if markerFaceColor == 'auto':
+            markerFaceQColor = markerEdgeQColor
+        else:
+            markerFaceQColor = XYDataStyleDict.color_to_qcolor(markerFaceColor)
         self.markerFaceColorButton = ColorButton(markerFaceQColor)
         self.markerFaceColorButton.colorChanged.connect(self.onMarkerFaceColorChanged)
         self.autoMarkerFaceColorCheckBox = QCheckBox('Auto')
