@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "pyqtgraph-tools"
+version = "0.1.0"
+description = "Widgets and tools for PyQtGraph"
+license = "MIT"
+authors = [
+    "Marcel Goldschen-Ohm <goldschen-ohm@utexas.edu>",
+]
+maintainers = [
+    "Marcel Goldschen-Ohm <goldschen-ohm@utexas.edu>",
+]
+readme = "README.md"
+homepage = "https://github.com/marcel-goldschen-ohm/PyQt-tools"
+repository = "https://github.com/marcel-goldschen-ohm/PyQt-tools"
+keywords = ["PyQt", "PySide"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
+packages = [{include = "pyqtgraph_tools", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+qtpy = "^2.4.1"
+numpy = "^1.26.2"
+qtawesome = "^1.3.0"
+pyqtgraph = "^0.13.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

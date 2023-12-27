@@ -26,11 +26,11 @@ class MultiValueSpinBox(QAbstractSpinBox):
         self._indices: np.ndarray[int] = np.array([0], dtype=int)
         self._indexed_values: np.ndarray = np.arange(10)
 
-        self.set_indices(self._indices)
+        self.setIndices(self._indices)
 
         self.setSizePolicy(QSizePolicy.Expanding, self.sizePolicy().verticalPolicy())
 
-        self.editingFinished.connect(self.on_text_edited)
+        self.editingFinished.connect(self.onTextEdited)
 
         self.setToolTip('index/slice (+Shift: page up/down)')
     
@@ -38,7 +38,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
         mask = (0 <= self._indices) & (self._indices < len(self._indexed_values))
         return self._indices[mask]
     
-    def set_indices(self, indices: list[int] | np.ndarray[int]):
+    def setIndices(self, indices: list[int] | np.ndarray[int]):
         # print('set_indices:', indices, 'into', self._indexed_values)
         if not isinstance(indices, np.ndarray):
             indices = np.array(indices, dtype=int)
@@ -50,28 +50,28 @@ class MultiValueSpinBox(QAbstractSpinBox):
         else:
             # default to first index if input indices are invalid
             self._indices = np.array([0], dtype=int)
-        text = self.text_from_values(self.selected_values())
+        text = self.textFromValues(self.selectedValues())
         self.lineEdit().setText(text)
         self.indices_changed.emit()
     
-    def indexed_values(self) -> np.ndarray:
+    def indexedValues(self) -> np.ndarray:
         return self._indexed_values
     
-    def set_indexed_values(self, values: list | np.ndarray):
+    def setIndexedValues(self, values: list | np.ndarray):
         if not isinstance(values, np.ndarray):
             dtype = type(values[0])
             values = np.array(values, dtype=dtype)
         self._indexed_values = values
-        self.set_indices(self.indices())
+        self.setIndices(self.indices())
     
-    def selected_values(self) -> np.ndarray:
+    def selectedValues(self) -> np.ndarray:
         return self._indexed_values[self.indices()]
     
-    def set_selected_values(self, values: list | np.ndarray):
-        indices = self.indices_from_values(values)
-        self.set_indices(indices)
+    def setSelectedValues(self, values: list | np.ndarray):
+        indices = self.indicesFromValues(values)
+        self.setIndices(indices)
     
-    def indices_from_values(self, values: list | np.ndarray) -> np.ndarray[int]:
+    def indicesFromValues(self, values: list | np.ndarray) -> np.ndarray[int]:
         if not isinstance(values, np.ndarray):
             values = np.array(values, dtype=self._indexed_values.dtype)
         if np.issubdtype(self._indexed_values.dtype, np.floating):
@@ -93,7 +93,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
                 indices = np.array(indices, dtype=int)
         return indices
     
-    def values_from_text(self, text: str, validate: bool = False) -> list:
+    def valuesFromText(self, text: str, validate: bool = False) -> list:
         text = text.strip()
         if text == '':
             return np.array([0])
@@ -174,8 +174,8 @@ class MultiValueSpinBox(QAbstractSpinBox):
         values = np.array(values, dtype=dtype)
         return values
     
-    def text_from_values(self, values: list | np.ndarray):
-        indices = self.indices_from_values(values)
+    def textFromValues(self, values: list | np.ndarray):
+        indices = self.indicesFromValues(values)
         index_ranges = []
         for index in indices:
             if (len(index_ranges) == 0) or (index != index_ranges[-1][-1] + 1):
@@ -205,14 +205,14 @@ class MultiValueSpinBox(QAbstractSpinBox):
         return text
     
     @Slot()
-    def on_text_edited(self):
+    def onTextEdited(self):
         text = self.lineEdit().text()
         try:
-            values = self.values_from_text(self.lineEdit().text(), validate=True)
-            self.set_selected_values(values)
+            values = self.valuesFromText(self.lineEdit().text(), validate=True)
+            self.setSelectedValues(values)
         except:
             # do not overwrite text if invalid
-            text = self.text_from_values(self.selected_values())
+            text = self.textFromValues(self.selectedValues())
             self.lineEdit().setText(text)
     
     def stepEnabled(self):
@@ -252,7 +252,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
                 # step to end of current selected range 
                 index = indices[0] if steps >= 0 else indices[-1]
                 indices = [index]
-        self.set_indices(indices)
+        self.setIndices(indices)
     
     def validate(self, text, pos):
         # try:
@@ -268,7 +268,7 @@ def test_live():
 
     def print_indices_and_values(spinbox: MultiValueSpinBox):
         print('indices:', spinbox.indices())
-        print('selected_values:', spinbox.selected_values())
+        print('selected_values:', spinbox.selectedValues())
 
     ui = QWidget()
     vbox = QVBoxLayout(ui)
@@ -278,36 +278,36 @@ def test_live():
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
-    spinbox.set_indexed_values(list(range(10)))
+    spinbox.setIndexedValues(list(range(10)))
     spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('0-9'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
-    spinbox.set_indexed_values([5,8,15,20])
-    spinbox.set_indices([1,2])
+    spinbox.setIndexedValues([5,8,15,20])
+    spinbox.setIndices([1,2])
     spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('5,8,15,20'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
-    spinbox.set_indexed_values(np.linspace(0,1,11))
+    spinbox.setIndexedValues(np.linspace(0,1,11))
     spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('0.0-1.0'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
-    spinbox.set_indexed_values(['a','b','c','d','e','f'])
+    spinbox.setIndexedValues(['a','b','c','d','e','f'])
     spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('a-f'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
-    spinbox.set_indexed_values(['cat','mouse','dog','house','car','truck'])
+    spinbox.setIndexedValues(['cat','mouse','dog','house','car','truck'])
     spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('cat, mouse, dog, house, car, truck'))
     vbox.addWidget(spinbox)
