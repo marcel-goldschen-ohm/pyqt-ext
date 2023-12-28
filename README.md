@@ -1,5 +1,56 @@
-# PyQt-tools
-Custom tools and widgets for PyQt.
+# pyqt-tools
 
-The code is subdivided into the following python packages:
-- [pyqt-tools](pyqt-tools/README.md)
+- [PyQtAbstractTreeItem](#pyqtabstracttreeitem)
+- [PyQtAbstractTreeModel](#pyqtabstracttreemodel)
+- [PyQtAbstractTreeView](#pyqtabstracttreeview)
+- [PyQtColorButton](#pyqtcolorbutton)
+- [PyQtKeyValueTreeItem](#pyqtkeyvaluetreeitem)
+- [PyQtKeyValueTreeModel](#pyqtkeyvaluetreemodel)
+- [PyQtKeyValueTreeView](#pyqtkeyvaluetreeview)
+- [PyQtMultiValueSpinBox](#pyqtmultivaluespinbox)
+- [PyQtXYDataStyle](#pyqtxydatastyle)
+
+# PyQtAbstractTreeItem
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtAbstractTreeModel
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtAbstractTreeView
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtColorButton
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtKeyValueTreeItem
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtKeyValueTreeModel
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtKeyValueTreeView
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtMultiValueSpinBox
+:construction:
+
+[go to top](#pyqt-tools)
+
+# PyQtXYDataStyle
+:construction:
+
+[go to top](#pyqt-tools)
