@@ -28,8 +28,8 @@ classifiers = [
 
 
 [project.urls]
-Homepage = "https://github.com/marcel-goldschen-ohm/PyQt-tools"
-Repository = "https://github.com/marcel-goldschen-ohm/PyQt-tools"
+homepage = "https://github.com/marcel-goldschen-ohm/PyQt-tools"
+repository = "https://github.com/marcel-goldschen-ohm/PyQt-tools"
 
 
 [build-system]
@@ -39,3 +39,7 @@ build-backend = "pdm.backend"
 
 [tool.pdm]
 package-type = "library"
+
+
+[tool.pdm.version]
+source = "scm"
