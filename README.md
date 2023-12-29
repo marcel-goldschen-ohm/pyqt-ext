@@ -13,47 +13,26 @@ Some of these may just be useful as templates for rolling your own custom tool.
 - [PyQtMultiValueSpinBox](#pyqtmultivaluespinbox)
 - [PyQtXYDataStyle](#pyqtxydatastyle)
 
-# PyQtAbstractTreeItem
-:construction:
+# Install
+Typically you would just include these files in your project as desired, or fork this repo and add it to your project repo as a submodule.
 
-[go to top](#pyqt-tools)
+However, you can also install it locally with [pdm]():
+```shell
+# clone repo and navigate to local repo
+git clone https://github.com/marcel-goldschen-ohm/PyQt-tools.git
+cd PyQt-tools
 
-# PyQtAbstractTreeModel
-:construction:
+# install pipx
+pip install pipx
+pipx ensure path
 
-[go to top](#pyqt-tools)
+# install pdm
+pipx install pdm
 
-# PyQtAbstractTreeView
-:construction:
+# tell pdm to use the python interpreter associated with your desired environment
+# e.g., conda activate env-my-project
+pdm use /path/to/your/env/python
 
-[go to top](#pyqt-tools)
-
-# PyQtColorButton
-:construction:
-
-[go to top](#pyqt-tools)
-
-# PyQtKeyValueTreeItem
-:construction:
-
-[go to top](#pyqt-tools)
-
-# PyQtKeyValueTreeModel
-:construction:
-
-[go to top](#pyqt-tools)
-
-# PyQtKeyValueTreeView
-:construction:
-
-[go to top](#pyqt-tools)
-
-# PyQtMultiValueSpinBox
-:construction:
-
-[go to top](#pyqt-tools)
-
-# PyQtXYDataStyle
-:construction:
-
-[go to top](#pyqt-tools)
+# install pyqt-tools for local development
+pdm install
+```
