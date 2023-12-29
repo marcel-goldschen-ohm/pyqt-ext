@@ -7,7 +7,7 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_tools import ColorButton
+from pyqt_toolkit import ColorButton
 
 
 ColorType = str | tuple[int | float] | list[int | float] | QColor
