@@ -12,6 +12,7 @@ Collection of PyQt/PySide widgets/tools.
 - [PyQtXYDataStyle](https://github.com/marcel-goldschen-ohm/PyQt-toolkit/docs/PyQtXYDataStyle.md)
 
 # Install
+Should work with PySide6, PyQt6, or PyQt5.
 ```shell
-pip install pyqt-toolkit
+pip install PySide6 pyqt-toolkit
 ```

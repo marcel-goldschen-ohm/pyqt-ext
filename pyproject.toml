@@ -1,6 +1,6 @@
 [project]
-name = "pyqt-tools"
-description = "Custom PyQt/PySide widgets/tools"
+name = "pyqt-toolkit"
+description = "Collection of PyQt/PySide widgets/tools"
 dynamic = ["version"]
 license = {text = "MIT"}
 authors = [
@@ -28,8 +28,8 @@ classifiers = [
 
 
 [project.urls]
-homepage = "https://github.com/marcel-goldschen-ohm/PyQt-tools"
-repository = "https://github.com/marcel-goldschen-ohm/PyQt-tools"
+homepage = "https://github.com/marcel-goldschen-ohm/PyQt-toolkit"
+repository = "https://github.com/marcel-goldschen-ohm/PyQt-toolkit"
 
 
 [build-system]
