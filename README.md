@@ -1,5 +1,5 @@
 # PyQt-tools
-A collection of PyQt/PySide widgets/tools.
+Collection of PyQt/PySide widgets/tools.
 
 Some of these may just be useful as templates for rolling your own custom tool.
 
