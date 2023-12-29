@@ -1,5 +1,5 @@
 [project]
-name = "PyQt-tools"
+name = "pyqt-tools"
 description = "Custom PyQt/PySide widgets/tools"
 dynamic = ["version"]
 license = {text = "MIT"}
