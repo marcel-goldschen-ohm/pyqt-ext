@@ -21,7 +21,12 @@ class ColorButton(QToolButton):
     def color(self) -> QColor:
         return self._color
 
-    def setColor(self, color: QColor):
+    def setColor(self, color: QColor | str):
+        if isinstance(color, str):
+            color = color.strip()
+            if not QColor.isValidColorName(color):
+                return
+            color = QColor(color)
         self.setStyleSheet(f'background-color: rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()}); border: 1px solid black;')
         self._color = color
         self.colorChanged.emit(color)
@@ -35,7 +40,7 @@ class ColorButton(QToolButton):
 def test_live():
     import sys
     app = QApplication(sys.argv)
-    ui = ColorButton()
+    ui = ColorButton("magenta")
     ui.show()
     status = app.exec()
     sys.exit(status)
