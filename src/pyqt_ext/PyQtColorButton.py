@@ -1,7 +1,6 @@
 """ PySide/PyQt button for selecting and displaying a color.
 """
 
-
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *

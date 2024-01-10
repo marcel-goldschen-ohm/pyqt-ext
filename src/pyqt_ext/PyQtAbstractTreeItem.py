@@ -26,7 +26,7 @@ class AbstractTreeItem():
         return self
 
     def __next__(self):
-        next_item: AbstractTreeItem = self.next_item_depth_first()
+        next_item: AbstractTreeItem = self.next_depth_first()
         if next_item is None:
             raise StopIteration
         return next_item
@@ -82,13 +82,13 @@ class AbstractTreeItem():
             if i-1 >= 0:
                 return siblings[i-1]
 
-    def last_item_depth_first(self) -> AbstractTreeItem:
+    def last_depth_first(self) -> AbstractTreeItem:
         item: AbstractTreeItem = self
         while item.children:
             item = item.last_child()
         return item
 
-    def next_item_depth_first(self) -> AbstractTreeItem | None:
+    def next_depth_first(self) -> AbstractTreeItem | None:
         if self.children:
             return self.first_child()
         next_sibling: AbstractTreeItem = self.next_sibling()
@@ -101,10 +101,10 @@ class AbstractTreeItem():
                 return next_sibling
             item = item.parent
 
-    def prev_item_depth_first(self) -> AbstractTreeItem | None:
+    def prev_depth_first(self) -> AbstractTreeItem | None:
         prev_sibling: AbstractTreeItem = self.prev_sibling()
         if prev_sibling is not None:
-            return prev_sibling.last_item_depth_first()
+            return prev_sibling.last_depth_first()
         if self.parent is not None:
             return self.parent
     
@@ -124,12 +124,12 @@ class AbstractTreeItem():
     def subtree_max_depth(self) -> int:
         root_depth: int = self.depth()
         max_depth: int = 0
-        item: AbstractTreeItem = self.next_item_depth_first()
+        item: AbstractTreeItem = self.next_depth_first()
         while item is not None:
             depth: int = item.depth()
             if depth - root_depth > max_depth:
                 max_depth = depth - root_depth
-            item = item.next_item_depth_first()
+            item = item.next_depth_first()
         return max_depth
     
     def dump(self, indent: int = 0):

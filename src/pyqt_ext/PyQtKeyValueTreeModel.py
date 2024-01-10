@@ -26,7 +26,7 @@ class KeyValueTreeModel(AbstractTreeModel):
         if index.column() == 1:
             if item.is_container():
                 # cannot edit container value, only the values of items inside it
-                return Qt.ItemFlag.ItemIsEnabled
+                return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         return Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
 
     def data(self, index: QModelIndex, role: int):

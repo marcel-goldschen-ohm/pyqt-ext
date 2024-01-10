@@ -25,7 +25,7 @@ class AbstractTreeView(QTreeView):
 
         # selection
         # self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
-        # self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         # context menu
         self.setContextMenuPolicy(Qt.CustomContextMenu)

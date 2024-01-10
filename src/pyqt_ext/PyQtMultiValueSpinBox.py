@@ -18,7 +18,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
     - Value ranges can be specified as first-last or start:stop[:step].
     """
 
-    indices_changed = Signal()
+    indicesChanged = Signal()
 
     def __init__(self, *args, **kwargs):
         QAbstractSpinBox.__init__(self, *args, **kwargs)
@@ -52,7 +52,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
             self._indices = np.array([0], dtype=int)
         text = self.textFromValues(self.selectedValues())
         self.lineEdit().setText(text)
-        self.indices_changed.emit()
+        self.indicesChanged.emit()
     
     def indexedValues(self) -> np.ndarray:
         return self._indexed_values
@@ -279,7 +279,7 @@ def test_live():
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(list(range(10)))
-    spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
+    spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('0-9'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
@@ -287,28 +287,28 @@ def test_live():
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues([5,8,15,20])
     spinbox.setIndices([1,2])
-    spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
+    spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('5,8,15,20'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(np.linspace(0,1,11))
-    spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
+    spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('0.0-1.0'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(['a','b','c','d','e','f'])
-    spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
+    spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('a-f'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(['cat','mouse','dog','house','car','truck'])
-    spinbox.indices_changed.connect(lambda obj=spinbox: print_indices_and_values(obj))
+    spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
     vbox.addWidget(QLabel('cat, mouse, dog, house, car, truck'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
