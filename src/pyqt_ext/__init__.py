@@ -1,9 +1,11 @@
 from pyqt_ext.PyQtAbstractTreeItem import AbstractTreeItem
 from pyqt_ext.PyQtAbstractTreeModel import AbstractTreeModel
 from pyqt_ext.PyQtAbstractTreeView import AbstractTreeView
-from pyqt_ext.PyQtColorButton import ColorButton
+
 from pyqt_ext.PyQtKeyValueTreeItem import KeyValueTreeItem
 from pyqt_ext.PyQtKeyValueTreeModel import KeyValueTreeModel
 from pyqt_ext.PyQtKeyValueTreeView import KeyValueTreeView
+
+from pyqt_ext.PyQtColorButton import ColorButton
 from pyqt_ext.PyQtMultiValueSpinBox import MultiValueSpinBox
 from pyqt_ext.PyQtXYDataStyle import XYDataStyleDict, XYDataStylePanel, editXYDataStyle
