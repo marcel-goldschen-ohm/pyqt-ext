@@ -24,7 +24,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
         QAbstractSpinBox.__init__(self, *args, **kwargs)
 
         self._indices: np.ndarray[int] = np.array([0], dtype=int)
-        self._indexed_values: np.ndarray = np.arange(10)
+        self._indexed_values: np.ndarray = np.arange(100)
 
         self.setIndices(self._indices)
 
@@ -33,6 +33,8 @@ class MultiValueSpinBox(QAbstractSpinBox):
         self.editingFinished.connect(self.onTextEdited)
 
         self.setToolTip('index/slice (+Shift: page up/down)')
+
+        # self.setPlaceholderText(self.textFromValues(self._indexed_values))
     
     def indices(self) -> np.ndarray[int]:
         mask = (0 <= self._indices) & (self._indices < len(self._indexed_values))
@@ -63,6 +65,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
             values = np.array(values, dtype=dtype)
         self._indexed_values = values
         self.setIndices(self.indices())
+        # self.setPlaceholderText(self.textFromValues(self._indexed_values))
     
     def selectedValues(self) -> np.ndarray:
         return self._indexed_values[self.indices()]
@@ -75,7 +78,13 @@ class MultiValueSpinBox(QAbstractSpinBox):
         if not isinstance(values, np.ndarray):
             values = np.array(values, dtype=self._indexed_values.dtype)
         if np.issubdtype(self._indexed_values.dtype, np.floating):
-            indices = np.where(np.isclose(values[:,None], self._indexed_values).any(0))[0]
+            indices = np.searchsorted(self._indexed_values, values, side='left')
+            # indices = []
+            # for value in values:
+            #     for i in range(len(self._indexed_values)):
+            #         if np.isclose(value, self._indexed_values[i]):
+            #             indices.append(i)
+            # indices = np.array(indices, dtype=int)
         else:
             # exact matches only for non-floating point types
             if np.issubdtype(self._indexed_values.dtype, np.integer):
