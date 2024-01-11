@@ -74,17 +74,20 @@ class MultiValueSpinBox(QAbstractSpinBox):
         indices = self.indicesFromValues(values)
         self.setIndices(indices)
     
-    def indicesFromValues(self, values: list | np.ndarray) -> np.ndarray[int]:
+    def indicesFromValues(self, values: list | np.ndarray, tol: float | None = None) -> np.ndarray[int]:
         if not isinstance(values, np.ndarray):
             values = np.array(values, dtype=self._indexed_values.dtype)
         if np.issubdtype(self._indexed_values.dtype, np.floating):
             indices = np.searchsorted(self._indexed_values, values, side='left')
-            # indices = []
-            # for value in values:
-            #     for i in range(len(self._indexed_values)):
-            #         if np.isclose(value, self._indexed_values[i]):
-            #             indices.append(i)
-            # indices = np.array(indices, dtype=int)
+            for i, index in enumerate(indices):
+                if index > 0:
+                    # check if previous value is closer
+                    if np.abs(values[i] - self._indexed_values[index-1]) < np.abs(values[i] - self._indexed_values[index]):
+                        indices[i] = index - 1
+            if tol is not None:
+                # only accept values within a tolerance, otherwise return all the closest indexed values
+                mask = np.abs(values - self._indexed_values[indices]) <= tol
+                indices = indices[mask]
         else:
             # exact matches only for non-floating point types
             if np.issubdtype(self._indexed_values.dtype, np.integer):
