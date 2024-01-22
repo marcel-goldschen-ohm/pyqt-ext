@@ -17,9 +17,9 @@ class XYDataStyleDict(dict):
     """ Hashable style dict for (x,y) data.
 
     'Color': str
-    'LineStyle': str
+    'LineStyle': ['none', '-', '--', ':', '-.']
     'LineWidth': float
-    'Marker': str
+    'Marker': ['none', 'o', 't', 't1', 't2', 't3', 's', 'p', 'h', 'star', '+', 'd', 'x']
     'MarkerSize': float
     'MarkerEdgeWidth': float
     'MarkerEdgeColor': str
