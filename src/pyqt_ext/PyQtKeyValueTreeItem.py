@@ -56,6 +56,28 @@ class KeyValueTreeItem(AbstractTreeItem):
                 self.parent._value[self.key] = value
         self._value = value
     
+    @property
+    def path(self) -> str:
+        path = ''
+        item = self
+        while item is not None:
+            path = str(item.key) + '/' + path
+            item = item.parent
+        return '/' + path.strip('/')
+    
+    def name_from_path(self, maxchar: int = 50) -> str:
+        name: str = self.path
+        if maxchar is None or len(name) <= maxchar:
+            return name
+        name_parts: list[str] = name.split('/')
+        name = name_parts[-1]
+        for i in reversed(range(len(name_parts) - 1)):
+            if i > 0 and len(name) + len(name_parts[i]) >= maxchar:
+                name = '.../' + name
+                break
+            name = name_parts[i] + '/' + name
+        return name
+    
     def is_dict(self):
         return isinstance(self.value, dict)
     
