@@ -28,8 +28,8 @@ classifiers = [
 
 
 [project.urls]
-homepage = "https://github.com/marcel-goldschen-ohm/PyQt-ext"
-repository = "https://github.com/marcel-goldschen-ohm/PyQt-ext"
+homepage = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
+repository = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
 
 
 [build-system]
