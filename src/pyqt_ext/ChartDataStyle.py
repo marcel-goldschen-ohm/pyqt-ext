@@ -7,13 +7,10 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_ext import ColorButton
+from pyqt_ext import ColorType, toQColor, toColorStr, ColorButton
 
 
-ColorType = str | tuple[int | float] | list[int | float] | QColor
-
-
-class XYDataStyleDict(dict):
+class ChartDataStyle(dict):
     """ Hashable style dict for (x,y) data.
 
     'Color': str
@@ -40,15 +37,21 @@ class XYDataStyleDict(dict):
         # Default markers supported by pyqtgraph.
         # Change these to whatever you want.
         self.markers = ['none', 'o', 't', 't1', 't2', 't3', 's', 'p', 'h', 'star', '+', 'd', 'x']
+
+        # Special color names
+        self._special_colors: dict[str, QColor] = {
+            'none': QColor('transparent'),
+            'auto': QColor('transparent'),
+        }
     
     def color(self) -> str:
         return self.get('Color', 'auto')
     
     def setColor(self, value: ColorType):
-        self['Color'] = XYDataStyleDict.toColorStr(value)
+        self['Color'] = toColorStr(value)
     
     def qcolor(self) -> QColor:
-        return XYDataStyleDict.toQColor(self.color())
+        return toQColor(self.color(), self._special_colors)
     
     def lineStyle(self) -> str:
         return self.get('LineStyle', '-')
@@ -96,62 +99,22 @@ class XYDataStyleDict(dict):
         return self.get('MarkerEdgeColor', 'auto')
     
     def setMarkerEdgeColor(self, value: ColorType):
-        self['MarkerEdgeColor'] = XYDataStyleDict.toColorStr(value)
+        self['MarkerEdgeColor'] = ChartDataStyle.toColorStr(value)
     
     def markerEdgeQColor(self) -> QColor:
-        return XYDataStyleDict.toQColor(self.markerEdgeColor())
+        return toQColor(self.markerEdgeColor(), self._special_colors)
     
     def markerFaceColor(self) -> str:
         return self.get('MarkerFaceColor', 'auto')
     
     def setMarkerFaceColor(self, value: ColorType):
-        self['MarkerFaceColor'] = XYDataStyleDict.toColorStr(value)
+        self['MarkerFaceColor'] = ChartDataStyle.toColorStr(value)
     
     def markerFaceQColor(self) -> QColor:
-        return XYDataStyleDict.toQColor(self.markerFaceColor())
-    
-    @staticmethod
-    def toQColor(color: ColorType) -> QColor:
-        if isinstance(color, QColor):
-            return color
-        if isinstance(color, str):
-            color = color.strip()
-            if color.lower() in ['auto', 'none']:
-                return QColor('transparent')
-            elif QColor.isValidColorName(color):
-                return QColor(color)
-            else:
-                # (r,g,b) or (r,g,b,a)
-                color = color.lstrip('(').rstrip(')').split(',')
-                for i, part in enumerate(color):
-                    try:
-                        color[i] = int(part)
-                    except:
-                        color = [float(part) for part in color]
-                        break
-        # (r,g,b) or (r,g,b,a)
-        if isinstance(color[0], float):
-            return QColor.fromRgbF(*color)
-        return QColor(*color)
-    
-    @staticmethod
-    def toColorStr(color: ColorType) -> str:
-        if isinstance(color, QColor):
-            # (r,g,b,a) in [0,255]
-            return f'({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})'
-        if isinstance(color, str):
-            if ',' in color:
-                # (r,g,b) or (r,g,b,a)
-                qcolor = XYDataStyleDict.toQColor(color)
-                return XYDataStyleDict.toColorStr(qcolor)
-            # TODO: sanity check?
-            return color
-        if isinstance(color, tuple) or isinstance(color, list):
-            # (r,g,b) or (r,g,b,a)
-            return '(' + ', '.join([str(part) for part in color]) + ')'
+        return toQColor(self.markerFaceColor(), self._special_colors)
 
 
-class XYDataStylePanel(QWidget):
+class ChartDataStylePanel(QWidget):
 
     def __init__(self, *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
@@ -232,8 +195,8 @@ class XYDataStylePanel(QWidget):
         self.markerFaceColorButton.setVisible(not self.autoMarkerFaceColorCheckBox.isChecked())
         form.addRow('Marker Face Color', markerFaceColorLayout)
     
-    def styleDict(self) -> XYDataStyleDict:
-        style = XYDataStyleDict()
+    def dataStyle(self) -> ChartDataStyle:
+        style = ChartDataStyle()
         if self.autoColorCheckBox.isChecked():
             style.setColor('auto')
         else:
@@ -253,7 +216,7 @@ class XYDataStylePanel(QWidget):
             style.setMarkerFaceColor(self.markerFaceColorButton.color())
         return style
     
-    def setStyleDict(self, style: XYDataStyleDict):
+    def setDataStyle(self, style: ChartDataStyle):
         # color
         self.autoColorCheckBox.setChecked(style.color() == 'auto')
         if self.autoColorCheckBox.isChecked():
@@ -290,9 +253,9 @@ class XYDataStylePanel(QWidget):
             self.markerFaceColorButton.setColor(style.markerFaceQColor())
     
 
-def editXYDataStyle(style: XYDataStyleDict, parent: QWidget = None, title: str = None) -> XYDataStyleDict | None:
-    panel = XYDataStylePanel()
-    panel.setStyleDict(style)
+def editChartDataStyle(style: ChartDataStyle, parent: QWidget = None, title: str = None) -> ChartDataStyle | None:
+    panel = ChartDataStylePanel()
+    panel.setDataStyle(style)
 
     dlg = QDialog(parent)
     vbox = QVBoxLayout(dlg)
@@ -309,13 +272,13 @@ def editXYDataStyle(style: XYDataStyleDict, parent: QWidget = None, title: str =
         dlg.setWindowTitle(title)
     dlg.setWindowModality(Qt.ApplicationModal)
     if dlg.exec() == QDialog.Accepted:
-        return panel.styleDict()
+        return panel.dataStyle()
 
 
 def test_live():
     import sys 
     app = QApplication(sys.argv)
-    ui = XYDataStylePanel()
+    ui = ChartDataStylePanel()
     ui.show()
     status = app.exec()
     sys.exit(status)

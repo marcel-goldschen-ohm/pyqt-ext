@@ -4,6 +4,8 @@
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
+from pyqt_ext import ColorType, toQColor
+
 
 
 class ColorButton(QToolButton):
@@ -20,29 +22,23 @@ class ColorButton(QToolButton):
     def color(self) -> QColor:
         return self._color
 
-    def setColor(self, color: QColor | str):
-        if isinstance(color, str):
-            color = color.strip()
-            if not QColor.isValidColorName(color):
-                return
-            color = QColor(color)
+    def setColor(self, color: ColorType):
+        color: QColor = toQColor(color)
         self.setStyleSheet(f'background-color: rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()}); border: 1px solid black;')
         self._color = color
         self.colorChanged.emit(color)
     
     def pickColor(self):
-        color = QColorDialog.getColor(self.color(), None, "Select Color", options=QColorDialog.ShowAlphaChannel)
+        color: QColor = QColorDialog.getColor(self.color(), None, "Select Color", options=QColorDialog.ShowAlphaChannel)
         if color.isValid():
             self.setColor(color)
 
 
 def test_live():
-    import sys
-    app = QApplication(sys.argv)
+    app = QApplication()
     ui = ColorButton("magenta")
     ui.show()
-    status = app.exec()
-    sys.exit(status)
+    app.exec()
 
 
 if __name__ == '__main__':

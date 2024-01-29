@@ -108,8 +108,7 @@ class AbstractTreeView(QTreeView):
 
 
 def test_live():
-    import sys
-    app = QApplication(sys.argv)
+    app = QApplication()
 
     root = AbstractTreeItem()
     root.insert_children(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
@@ -125,7 +124,7 @@ def test_live():
     view.expandAll()
     view.resizeAllColumnsToContents()
 
-    sys.exit(app.exec())
+    app.exec()
 
 
 if __name__ == '__main__':

@@ -2,7 +2,6 @@
 """
 
 from __future__ import annotations
-
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
@@ -71,8 +70,7 @@ class KeyValueTreeView(AbstractTreeView):
 
 
 def test_live():
-    import sys
-    app = QApplication(sys.argv)
+    app = QApplication()
 
     data = {
         'a': 1,
@@ -94,7 +92,7 @@ def test_live():
     view.show()
     view.resize(QSize(400, 400))
 
-    sys.exit(app.exec())
+    app.exec()
 
 if __name__ == '__main__':
     test_live()

@@ -1,11 +1,13 @@
-from pyqt_ext.PyQtAbstractTreeItem import AbstractTreeItem
-from pyqt_ext.PyQtAbstractTreeModel import AbstractTreeModel
-from pyqt_ext.PyQtAbstractTreeView import AbstractTreeView
+from pyqt_ext.AbstractTreeItem import AbstractTreeItem
+from pyqt_ext.AbstractTreeModel import AbstractTreeModel
+from pyqt_ext.AbstractTreeView import AbstractTreeView
 
-from pyqt_ext.PyQtKeyValueTreeItem import KeyValueTreeItem
-from pyqt_ext.PyQtKeyValueTreeModel import KeyValueTreeModel
-from pyqt_ext.PyQtKeyValueTreeView import KeyValueTreeView
+from pyqt_ext.KeyValueTreeItem import KeyValueTreeItem
+from pyqt_ext.KeyValueTreeModel import KeyValueTreeModel
+from pyqt_ext.KeyValueTreeView import KeyValueTreeView
 
-from pyqt_ext.PyQtColorButton import ColorButton
-from pyqt_ext.PyQtMultiValueSpinBox import MultiValueSpinBox
-from pyqt_ext.PyQtXYDataStyle import XYDataStyleDict, XYDataStylePanel, editXYDataStyle
+from pyqt_ext.Color import ColorType, toQColor, toColorStr
+from pyqt_ext.ColorButton import ColorButton
+
+from pyqt_ext.ChartDataStyle import ChartDataStyle, ChartDataStylePanel, editChartDataStyle
+from pyqt_ext.MultiValueSpinBox import MultiValueSpinBox

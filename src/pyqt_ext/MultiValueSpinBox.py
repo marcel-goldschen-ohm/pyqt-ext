@@ -2,7 +2,6 @@
 """
 
 from __future__ import annotations
-
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
@@ -275,8 +274,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
 
     
 def test_live():
-    import sys
-    app = QApplication(sys.argv)
+    app = QApplication()
 
     def print_indices_and_values(spinbox: MultiValueSpinBox):
         print('indices:', spinbox.indices())
@@ -326,8 +324,7 @@ def test_live():
     vbox.addStretch()
 
     ui.show()
-    status = app.exec()
-    sys.exit(status)
+    app.exec()
 
 
 if __name__ == '__main__':
