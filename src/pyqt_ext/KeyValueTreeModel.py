@@ -21,7 +21,7 @@ class KeyValueTreeModel(AbstractTreeModel):
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         if not index.isValid():
             return Qt.ItemFlag.NoItemFlags
-        item: KeyValueTreeItem = self.get_item(index)
+        item: KeyValueTreeItem = self.itemFromIndex(index)
         if index.column() == 1:
             if item.is_container():
                 # cannot edit container value, only the values of items inside it
@@ -31,7 +31,7 @@ class KeyValueTreeModel(AbstractTreeModel):
     def data(self, index: QModelIndex, role: int):
         if not index.isValid():
             return
-        item: KeyValueTreeItem = self.get_item(index)
+        item: KeyValueTreeItem = self.itemFromIndex(index)
         if item is None:
             return
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
@@ -47,7 +47,7 @@ class KeyValueTreeModel(AbstractTreeModel):
     def setData(self, index: QModelIndex, value, role: int) -> bool:
         if role != Qt.ItemDataRole.EditRole:
             return False
-        item: KeyValueTreeItem = self.get_item(index)
+        item: KeyValueTreeItem = self.itemFromIndex(index)
         if item is None:
             return False
         if role == Qt.ItemDataRole.EditRole:

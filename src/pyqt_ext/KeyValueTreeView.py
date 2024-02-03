@@ -29,7 +29,7 @@ class KeyValueTreeView(AbstractTreeView):
                 insert_menu.addAction('list', lambda model=model, row=0, item=KeyValueTreeItem('list', []), parent_index=parent_index: model.insert_items(row, [item], parent_index))
                 menu.addMenu(insert_menu)
             return menu
-        item: KeyValueTreeItem = model.get_item(index)
+        item: KeyValueTreeItem = model.itemFromIndex(index)
         parent_index: QModelIndex = model.parent(index)
         menu.addSeparator()
         insert_menu: QMenu = QMenu('Insert before')
@@ -66,7 +66,7 @@ class KeyValueTreeView(AbstractTreeView):
         answer = QMessageBox.question(self, 'Delete', f'Delete {item.name_from_path()}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
         if answer == QMessageBox.StandardButton.Yes:
             model: KeyValueTreeModel = self.model()
-            model.remove_item(item)
+            model.removeItem(item)
 
 
 def test_live():

@@ -18,25 +18,90 @@ class AbstractTreeItem():
     """
     
     def __init__(self, parent: AbstractTreeItem | None = None):
-        self.parent: AbstractTreeItem = parent
+        self.parent: AbstractTreeItem = None
         self.children: list[AbstractTreeItem] = []
-    
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        next_item: AbstractTreeItem = self.next_depth_first()
-        if next_item is None:
-            raise StopIteration
-        return next_item
+        if parent is not None:
+            # if self not in parent.children:
+            #     parent.children.append(self)
+            self.set_parent(parent)
     
     # !!! not implemented
     def __repr__(self):
         # raise NotImplementedError
         return str(id(self))  # for debugging
     
+    # tree linkage ------------------------------------------------------------
+    
+    def set_parent(self, parent: AbstractTreeItem | None) -> None:
+        """ Set the parent of this item.
+        
+            This is the main linkage function.
+            All other tree linkage functions use this.
+            This results in appending self to parent's list of children.
+        """
+        if self.parent is parent:
+            return
+        if self.parent is not None:
+            # detach from old parent
+            if self in self.parent.children:
+                self.parent.children.remove(self)
+        if parent is not None:
+            # attach to new parent
+            if self not in parent.children:
+                parent.children.append(self)
+        self.parent = parent
+    
+    def append_child(self, item: AbstractTreeItem) -> None:
+        item.set_parent(self)
+    
+    def insert_child(self, index: int, item: AbstractTreeItem) -> None:
+        item.set_parent(self)
+        # move item to index
+        pos = self.children.index(item)
+        if pos != index:
+            self.children.insert(index, self.children.pop(pos))
+    
+    def remove_child(self, item: AbstractTreeItem) -> None:
+        if item.parent is not self:
+            return
+        item.set_parent(None)
+    
+    # interface for QAbstractItemModel ----------------------------------------
+    
     def row(self) -> int:
         return self.sibling_index()
+    
+    # !!! not implemented
+    def data(self, column: int):
+        # raise NotImplementedError
+        return self.__repr__()  # for debugging
+    
+    # !!! not implemented
+    def set_data(self, column: int, value) -> bool:
+        # raise NotImplementedError
+        return False
+    
+    def remove_children(self, position: int, count: int) -> bool:
+        if position < 0 or position + count > len(self.children):
+            return False
+        for _ in range(count):
+            item: AbstractTreeItem = self.children[position]
+            self.remove_child(item)
+        return True
+    
+    def insert_children(self, position: int, items: list[AbstractTreeItem]) -> bool:
+        if position < 0 or position > len(self.children):
+            return False
+        for i, item in enumerate(items):
+            self.insert_child(position + i, item)
+        return True
+    
+    def append_children(self, items: list[AbstractTreeItem]) -> bool:
+        for item in items:
+            self.append_child(item)
+        return True
+    
+    # tree traversal ----------------------------------------------------------
     
     def root(self) -> AbstractTreeItem:
         item: AbstractTreeItem = self
@@ -131,40 +196,20 @@ class AbstractTreeItem():
             item = item.next_depth_first()
         return max_depth
     
+    def has_ancestor(self, ancestor: AbstractTreeItem) -> bool:
+        item: AbstractTreeItem = self
+        while item is not None:
+            if item is ancestor:
+                return True
+            item = item.parent
+        return False
+    
+    # debugging --------------------------------------------------------------
+    
     def dump(self, indent: int = 0):
         print(' ' * indent + self.__repr__())
         for child in self.children:
             child.dump(indent + 4)
-    
-    # !!! not implemented
-    def data(self, column: int):
-        # raise NotImplementedError
-        return self.__repr__()  # for debugging
-    
-    # !!! not implemented
-    def set_data(self, column: int, value) -> bool:
-        # raise NotImplementedError
-        return False
-    
-    def remove_children(self, position: int, count: int) -> bool:
-        if position < 0 or position + count > len(self.children):
-            return False
-        for row in range(count):
-            item: AbstractTreeItem = self.children.pop(position)
-            item.parent = None
-        return True
-    
-    def insert_children(self, position: int, items: list[AbstractTreeItem]) -> bool:
-        if position < 0 or position > len(self.children):
-            return False
-        for i, item in enumerate(items):
-            item.parent = self
-            self.children.insert(position + i, item)
-        return True
-    
-    def append_children(self, items: list[AbstractTreeItem]) -> bool:
-        position: int = len(self.children)
-        return self.insert_children(position, items)
 
 
 def test_tree():

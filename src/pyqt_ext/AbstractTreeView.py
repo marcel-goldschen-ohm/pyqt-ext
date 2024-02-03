@@ -22,10 +22,27 @@ class AbstractTreeView(QTreeView):
         self.setSizePolicy(sizePolicy)
         self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
         self.setAlternatingRowColors(True)
+        # self.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
+        # self.setAnimated(False)
+        # self.setAllColumnsShowFocus(True)
 
         # selection
-        # self.setSelectionMode(QAbstractItemView.SelectionMode.MultiSelection)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+
+        # drag and drop
+        # Actual enabling of drag and drop is done during setModel() and is determined by the model's supportedDropActions().
+        # self.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+        # self.setDefaultDropAction(Qt.DropAction.MoveAction)
+        # self.setDragDropOverwriteMode(False)
+
+        # drag and drop
+        self.setDragEnabled(True)
+        self.viewport().setAcceptDrops(True)
+        self.setAcceptDrops(True)
+        self.setDropIndicatorShown(True)
+        self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        # self.setDefaultDropAction(Qt.DropAction.MoveAction)
 
         # context menu
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -33,6 +50,19 @@ class AbstractTreeView(QTreeView):
 
         # keep track of depth
         self._depth: int = 0
+    
+    # def setModel(self, model: AbstractTreeModel):
+    #     QTreeView.setModel(self, model)
+
+    #     # drag and drop?
+    #     is_dnd = model.supportedDropActions() != Qt.DropAction.IgnoreAction
+    #     self.setDragEnabled(is_dnd)
+    #     self.setAcceptDrops(is_dnd)
+    #     self.viewport().setAcceptDrops(is_dnd)
+    #     # self.viewport().installEventFilter(self)
+    #     self.setDropIndicatorShown(is_dnd)
+    #     self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+    #     # self.setDefaultDropAction(Qt.DropAction.MoveAction)
     
     @Slot(QItemSelection, QItemSelection)
     def selectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
@@ -105,6 +135,68 @@ class AbstractTreeView(QTreeView):
     #             if not index.isValid():
     #                 self.selectionModel().clearSelection()
     #     QTreeView.mousePressEvent(self, event)
+    
+    def dragEnterEvent(self, event: QDragEnterEvent):
+        # print('dragEnterEvent   ', event.mimeData().formats(), event.possibleActions())
+        index: QModelIndex = event.source().currentIndex()
+        if index.isValid() and index != QModelIndex():
+            self._src_index = index
+            event.accept()
+        else:
+            event.ignore()
+    
+    def dropEvent(self, event: QDropEvent):
+        src_index: QModelIndex = getattr(self, '_src_index', None)
+        if (src_index is None) or (not src_index.isValid()) or (src_index == QModelIndex()):
+            event.ignore()
+            return
+        dst_index: QModelIndex = self.indexAt(event.pos())
+        
+        model: AbstractTreeModel = self.model()
+        src_parent_index: QModelIndex = model.parent(src_index)
+        src_row = src_index.row()
+        dst_parent_index: QModelIndex = model.parent(dst_index)
+        dst_row = dst_index.row()
+
+        drop_pos = self.dropIndicatorPosition()
+        if drop_pos == QAbstractItemView.DropIndicatorPosition.OnViewport:
+            dst_parent_index = QModelIndex()
+            dst_row = model.rowCount(dst_parent_index)
+        elif drop_pos == QAbstractItemView.DropIndicatorPosition.OnItem:
+            dst_parent_index = dst_index
+            dst_row = model.rowCount(dst_parent_index)
+        elif drop_pos == QAbstractItemView.DropIndicatorPosition.AboveItem:
+            pass
+        elif drop_pos == QAbstractItemView.DropIndicatorPosition.BelowItem:
+            dst_row += 1
+        
+        src_item: AbstractTreeItem = model.itemFromIndex(src_index)
+        dst_parent_item: AbstractTreeItem = model.itemFromIndex(dst_parent_index)
+        if dst_parent_item.has_ancestor(src_item):
+            event.ignore()
+            return
+        
+        print('dropEvent        ', event.dropAction(), drop_pos, id(model.itemFromIndex(src_index)), '->', id(model.itemFromIndex(dst_index)))
+
+        # old_max_depth = model.max_depth()
+        model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
+        # moved_index = model.index(dst_row, 0, dst_parent_index)
+        # model.infoChanged.emit(moved_index)
+        # new_max_depth = model.max_depth()
+        # if new_max_depth != old_max_depth:
+        #     model.maxDepthChanged.emit(new_max_depth)
+
+        # We already handled the drop event, so ignore the default implementation.
+        event.setDropAction(Qt.DropAction.IgnoreAction)
+        event.accept()
+    
+    # def dropMimeData(self, index: QModelIndex, data: QMimeData, action: Qt.DropAction) -> bool:
+    #     print('dropMimeData')
+    #     return False
+    
+    # def canDropMimeData(self, data: QMimeData, action: Qt.DropAction, row: int, column: int, parent: QModelIndex) -> bool:
+    #     print('canDropMimeData')
+    #     return True
 
 
 def test_live():
