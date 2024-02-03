@@ -12,7 +12,7 @@ class AbstractTreeItem():
     
     !!! This only implements the tree structure. You must define any data variables in a derived class.
 
-    In a class derived from this base class:
+    In a derived class:
         1. Add attributes to store/interface with your data.
         2. Reimplement data(), set_data(), and __repr__() methods.
     """
@@ -23,7 +23,7 @@ class AbstractTreeItem():
         if parent is not None:
             # if self not in parent.children:
             #     parent.children.append(self)
-            self.set_parent(parent)
+            self.setParent(parent)
     
     # !!! not implemented
     def __repr__(self):
@@ -32,7 +32,7 @@ class AbstractTreeItem():
     
     # tree linkage ------------------------------------------------------------
     
-    def set_parent(self, parent: AbstractTreeItem | None) -> None:
+    def setParent(self, parent: AbstractTreeItem | None) -> None:
         """ Set the parent of this item.
         
             This is the main linkage function.
@@ -51,25 +51,25 @@ class AbstractTreeItem():
                 parent.children.append(self)
         self.parent = parent
     
-    def append_child(self, item: AbstractTreeItem) -> None:
-        item.set_parent(self)
+    def appendChild(self, item: AbstractTreeItem) -> None:
+        item.setParent(self)
     
-    def insert_child(self, index: int, item: AbstractTreeItem) -> None:
-        item.set_parent(self)
+    def insertChild(self, index: int, item: AbstractTreeItem) -> None:
+        item.setParent(self)
         # move item to index
         pos = self.children.index(item)
         if pos != index:
             self.children.insert(index, self.children.pop(pos))
     
-    def remove_child(self, item: AbstractTreeItem) -> None:
+    def removeChild(self, item: AbstractTreeItem) -> None:
         if item.parent is not self:
             return
-        item.set_parent(None)
+        item.setParent(None)
     
     # interface for QAbstractItemModel ----------------------------------------
     
     def row(self) -> int:
-        return self.sibling_index()
+        return self.siblingIndex()
     
     # !!! not implemented
     def data(self, column: int):
@@ -77,28 +77,28 @@ class AbstractTreeItem():
         return self.__repr__()  # for debugging
     
     # !!! not implemented
-    def set_data(self, column: int, value) -> bool:
+    def setData(self, column: int, value) -> bool:
         # raise NotImplementedError
         return False
     
-    def remove_children(self, position: int, count: int) -> bool:
+    def removeChildren(self, position: int, count: int) -> bool:
         if position < 0 or position + count > len(self.children):
             return False
         for _ in range(count):
             item: AbstractTreeItem = self.children[position]
-            self.remove_child(item)
+            self.removeChild(item)
         return True
     
-    def insert_children(self, position: int, items: list[AbstractTreeItem]) -> bool:
+    def insertChildren(self, position: int, items: list[AbstractTreeItem]) -> bool:
         if position < 0 or position > len(self.children):
             return False
         for i, item in enumerate(items):
-            self.insert_child(position + i, item)
+            self.insertChild(position + i, item)
         return True
     
-    def append_children(self, items: list[AbstractTreeItem]) -> bool:
+    def appendChildren(self, items: list[AbstractTreeItem]) -> bool:
         for item in items:
-            self.append_child(item)
+            self.appendChild(item)
         return True
     
     # tree traversal ----------------------------------------------------------
@@ -109,22 +109,22 @@ class AbstractTreeItem():
             item = item.parent
         return item
     
-    def first_child(self) -> AbstractTreeItem | None:
+    def firstChild(self) -> AbstractTreeItem | None:
         if self.children:
             return self.children[0]
 
-    def last_child(self) -> AbstractTreeItem | None:
+    def lastChild(self) -> AbstractTreeItem | None:
         if self.children:
             return self.children[-1]
 
-    def first_sibling(self) -> AbstractTreeItem:
+    def firstSibling(self) -> AbstractTreeItem:
         if self.parent is not None:
-            return self.parent.first_child()
+            return self.parent.firstChild()
         return self
 
-    def last_sibling(self) -> AbstractTreeItem:
+    def lastSibling(self) -> AbstractTreeItem:
         if self.parent is not None:
-            return self.parent.last_child()
+            return self.parent.lastChild()
         return self
 
     def siblings(self) -> list[AbstractTreeItem]:
@@ -132,47 +132,50 @@ class AbstractTreeItem():
             return self.parent.children
         return [self]
     
-    def next_sibling(self) -> AbstractTreeItem | None:
+    def nextSibling(self) -> AbstractTreeItem | None:
         siblings: list[AbstractTreeItem] = self.siblings()
         if siblings:
             i: int = siblings.index(self)
             if i+1 < len(siblings):
                 return siblings[i+1]
 
-    def prev_sibling(self) -> AbstractTreeItem | None:
+    def prevSibling(self) -> AbstractTreeItem | None:
         siblings: list[AbstractTreeItem] = self.siblings()
         if siblings:
             i: int = siblings.index(self)
             if i-1 >= 0:
                 return siblings[i-1]
 
-    def last_depth_first(self) -> AbstractTreeItem:
+    # depth first traversal
+    def last(self) -> AbstractTreeItem:
         item: AbstractTreeItem = self
         while item.children:
-            item = item.last_child()
+            item = item.lastChild()
         return item
 
-    def next_depth_first(self) -> AbstractTreeItem | None:
+    # depth first traversal
+    def next(self) -> AbstractTreeItem | None:
         if self.children:
-            return self.first_child()
-        next_sibling: AbstractTreeItem = self.next_sibling()
+            return self.firstChild()
+        next_sibling: AbstractTreeItem = self.nextSibling()
         if next_sibling is not None:
             return next_sibling
         item: AbstractTreeItem = self.parent
         while item is not None:
-            next_sibling: AbstractTreeItem = item.next_sibling()
+            next_sibling: AbstractTreeItem = item.nextSibling()
             if next_sibling is not None:
                 return next_sibling
             item = item.parent
 
-    def prev_depth_first(self) -> AbstractTreeItem | None:
-        prev_sibling: AbstractTreeItem = self.prev_sibling()
+    # depth first traversal
+    def prev(self) -> AbstractTreeItem | None:
+        prev_sibling: AbstractTreeItem = self.prevSibling()
         if prev_sibling is not None:
-            return prev_sibling.last_depth_first()
+            return prev_sibling.last()
         if self.parent is not None:
             return self.parent
     
-    def sibling_index(self) -> int:
+    def siblingIndex(self) -> int:
         if self.parent is None:
             return 0
         return self.parent.children.index(self)
@@ -185,18 +188,18 @@ class AbstractTreeItem():
             item = item.parent
         return depth
     
-    def subtree_max_depth(self) -> int:
+    def subtreeMaxDepth(self) -> int:
         root_depth: int = self.depth()
         max_depth: int = 0
-        item: AbstractTreeItem = self.next_depth_first()
+        item: AbstractTreeItem = self.next()
         while item is not None:
             depth: int = item.depth()
             if depth - root_depth > max_depth:
                 max_depth = depth - root_depth
-            item = item.next_depth_first()
+            item = item.next()
         return max_depth
     
-    def has_ancestor(self, ancestor: AbstractTreeItem) -> bool:
+    def hasAncestor(self, ancestor: AbstractTreeItem) -> bool:
         item: AbstractTreeItem = self
         while item is not None:
             if item is ancestor:
@@ -214,9 +217,9 @@ class AbstractTreeItem():
 
 def test_tree():
     root = AbstractTreeItem()
-    root.insert_children(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
-    root.children[-1].insert_children(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
-    root.children[-1].children[0].insert_children(0, [AbstractTreeItem(), AbstractTreeItem()])
+    root.insertChildren(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
+    root.children[-1].insertChildren(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
+    root.children[-1].children[0].insertChildren(0, [AbstractTreeItem(), AbstractTreeItem()])
     root.dump()
 
 

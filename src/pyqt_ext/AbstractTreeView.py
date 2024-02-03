@@ -12,7 +12,7 @@ class AbstractTreeView(QTreeView):
     """ Base class for a tree view with context menu and mouse wheel expand/collapse.
     """
 
-    selection_changed = Signal()
+    selectionWasChanged = Signal()
 
     def __init__(self, parent: QObject = None) -> None:
         QTreeView.__init__(self, parent)
@@ -22,27 +22,10 @@ class AbstractTreeView(QTreeView):
         self.setSizePolicy(sizePolicy)
         self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
         self.setAlternatingRowColors(True)
-        # self.setHorizontalScrollMode(QAbstractItemView.ScrollMode.ScrollPerPixel)
-        # self.setAnimated(False)
-        # self.setAllColumnsShowFocus(True)
 
         # selection
         self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-
-        # drag and drop
-        # Actual enabling of drag and drop is done during setModel() and is determined by the model's supportedDropActions().
-        # self.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
-        # self.setDefaultDropAction(Qt.DropAction.MoveAction)
-        # self.setDragDropOverwriteMode(False)
-
-        # drag and drop
-        self.setDragEnabled(True)
-        self.viewport().setAcceptDrops(True)
-        self.setAcceptDrops(True)
-        self.setDropIndicatorShown(True)
-        self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-        # self.setDefaultDropAction(Qt.DropAction.MoveAction)
 
         # context menu
         self.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -51,23 +34,25 @@ class AbstractTreeView(QTreeView):
         # keep track of depth
         self._depth: int = 0
     
-    # def setModel(self, model: AbstractTreeModel):
-    #     QTreeView.setModel(self, model)
+    def setModel(self, model: AbstractTreeModel):
+        QTreeView.setModel(self, model)
 
-    #     # drag and drop?
-    #     is_dnd = model.supportedDropActions() != Qt.DropAction.IgnoreAction
-    #     self.setDragEnabled(is_dnd)
-    #     self.setAcceptDrops(is_dnd)
-    #     self.viewport().setAcceptDrops(is_dnd)
-    #     # self.viewport().installEventFilter(self)
-    #     self.setDropIndicatorShown(is_dnd)
-    #     self.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-    #     # self.setDefaultDropAction(Qt.DropAction.MoveAction)
+        # drag and drop?
+        is_dnd: bool = model.supportedDropActions() != Qt.DropAction.IgnoreAction
+        self.setDragEnabled(is_dnd)
+        self.setAcceptDrops(is_dnd)
+        self.viewport().setAcceptDrops(is_dnd)
+        self.setDropIndicatorShown(is_dnd)
+        if is_dnd:
+            self.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+            self.setDefaultDropAction(Qt.DropAction.MoveAction)
+        else:
+            self.setDragDropMode(QAbstractItemView.DragDropMode.NoDragDrop)
     
     @Slot(QItemSelection, QItemSelection)
     def selectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
         QTreeView.selectionChanged(self, selected, deselected)
-        self.selection_changed.emit()
+        self.selectionWasChanged.emit()
 
     @Slot(QPoint)
     def onCustomContextMenuRequested(self, point: QPoint):
@@ -90,7 +75,9 @@ class AbstractTreeView(QTreeView):
     @Slot()
     def expandAll(self):
         QTreeView.expandAll(self)
-        self._depth = self.model().max_depth()
+        model: AbstractTreeModel = self.model()
+        if model is not None:
+            self._depth = model.maxDepth()
     
     @Slot()
     def collapseAll(self):
@@ -99,15 +86,19 @@ class AbstractTreeView(QTreeView):
     
     @Slot(int)
     def expandToDepth(self, depth: int):
-        depth = max(0, min(depth, self.model().max_depth()))
-        if depth == 0:
-            self.collapseAll()
-            return
+        model: AbstractTreeModel = self.model()
+        if model is not None:
+            depth = max(0, min(depth, model.maxDepth()))
+            if depth == 0:
+                self.collapseAll()
+                return
         QTreeView.expandToDepth(self, depth - 1)
         self._depth = depth
     
     def resizeAllColumnsToContents(self):
         model: AbstractTreeModel = self.model()
+        if model is None:
+            return
         for col in range(model.columnCount()):
             self.resizeColumnToContents(col)
     
@@ -172,19 +163,21 @@ class AbstractTreeView(QTreeView):
         
         src_item: AbstractTreeItem = model.itemFromIndex(src_index)
         dst_parent_item: AbstractTreeItem = model.itemFromIndex(dst_parent_index)
-        if dst_parent_item.has_ancestor(src_item):
+        if dst_parent_item.hasAncestor(src_item):
             event.ignore()
             return
         
-        print('dropEvent        ', event.dropAction(), drop_pos, id(model.itemFromIndex(src_index)), '->', id(model.itemFromIndex(dst_index)))
-
-        # old_max_depth = model.max_depth()
-        model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
-        # moved_index = model.index(dst_row, 0, dst_parent_index)
-        # model.infoChanged.emit(moved_index)
-        # new_max_depth = model.max_depth()
-        # if new_max_depth != old_max_depth:
-        #     model.maxDepthChanged.emit(new_max_depth)
+        if event.dropAction() == Qt.DropAction.MoveAction:
+            # old_max_depth = model.max_depth()
+            model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
+            # moved_index = model.index(dst_row, 0, dst_parent_index)
+            # model.infoChanged.emit(moved_index)
+            # new_max_depth = model.max_depth()
+            # if new_max_depth != old_max_depth:
+            #     model.maxDepthChanged.emit(new_max_depth)
+        else:
+            event.ignore()
+            return
 
         # We already handled the drop event, so ignore the default implementation.
         event.setDropAction(Qt.DropAction.IgnoreAction)
@@ -200,15 +193,17 @@ class AbstractTreeView(QTreeView):
 
 
 def test_live():
+    from pyqt_ext.AbstractTreeModel import AbstractDndTreeModel
+
     app = QApplication()
 
     root = AbstractTreeItem()
-    root.insert_children(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
-    root.children[-1].insert_children(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
-    root.children[-1].children[0].insert_children(0, [AbstractTreeItem(), AbstractTreeItem()])
+    root.insertChildren(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
+    root.children[-1].insertChildren(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
+    root.children[-1].children[0].insertChildren(0, [AbstractTreeItem(), AbstractTreeItem()])
     # root.dump()
     
-    model = AbstractTreeModel(root)
+    model = AbstractDndTreeModel(root)
     view = AbstractTreeView()
     view.setModel(model)
     view.show()

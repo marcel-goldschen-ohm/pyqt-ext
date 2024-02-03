@@ -1,5 +1,5 @@
 from pyqt_ext.AbstractTreeItem import AbstractTreeItem
-from pyqt_ext.AbstractTreeModel import AbstractTreeModel
+from pyqt_ext.AbstractTreeModel import AbstractTreeModel, AbstractDndTreeModel
 from pyqt_ext.AbstractTreeView import AbstractTreeView
 
 from pyqt_ext.KeyValueTreeItem import KeyValueTreeItem
