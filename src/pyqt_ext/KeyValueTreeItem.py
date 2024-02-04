@@ -11,35 +11,40 @@ from pyqt_ext import AbstractTreeItem
 class KeyValueTreeItem(AbstractTreeItem):
     
     def __init__(self, key, value, parent: KeyValueTreeItem | None = None) -> None:
-        AbstractTreeItem.__init__(self, parent=parent)
         self._key = key
         self._value = value
+        AbstractTreeItem.__init__(self, parent=parent)
 
         # recursively build subtree if value is itself a container with key,value access
         if isinstance(value, dict):
             for key in value:
-                self.children.append(KeyValueTreeItem(key, value[key], parent=self))
+                KeyValueTreeItem(key, value[key], parent=self)
         elif isinstance(value, list):
             for i in range(len(value)):
-                self.children.append(KeyValueTreeItem(None, value[i], parent=self))
+                KeyValueTreeItem(None, value[i], parent=self)
     
     def __repr__(self):
         return f'{self.key}: {self.value}'
     
+    # data --------------------------------------------------------------------
+    
     @property
     def key(self):
         if self.parent is not None:
-            if self.parent.is_list():
+            if self.parent.isList():
                 return self.row()
         return self._key
     
     @key.setter
     def key(self, key) -> None:
         if self.parent is not None:
-            if isinstance(self.parent.value, dict):
-                self.parent._value[key] = self.value
-                del self.parent._value[self._key]
-            elif isinstance(self.parent.value, list):
+            if self.parent.isDict():
+                if (self.key is not None) and (self.key in self.parent.value):
+                    self.parent.value.pop(self.key)
+                if key in self.parent.value:
+                    key = unique_name(key, list(self.parent.value.keys()))
+                self.parent.value[key] = self.value
+            elif self.parent.isList():
                 # cannot edit list index
                 return
         self._key = key
@@ -51,98 +56,129 @@ class KeyValueTreeItem(AbstractTreeItem):
     @value.setter
     def value(self, value) -> None:
         if self.parent is not None:
-            if self.parent.is_dict() or self.parent.is_list():
+            if self.parent.isDict() or self.parent.isList():
                 self.parent._value[self.key] = value
         self._value = value
     
-    @property
-    def path(self) -> str:
-        path = ''
-        item = self
-        while item is not None:
-            path = str(item.key) + '/' + path
-            item = item.parent
-        return '/' + path.strip('/')
-    
-    def name_from_path(self, maxchar: int = 50) -> str:
-        name: str = self.path
-        if maxchar is None or len(name) <= maxchar:
-            return name
-        name_parts: list[str] = name.split('/')
-        name = name_parts[-1]
-        for i in reversed(range(len(name_parts) - 1)):
-            if i > 0 and len(name) + len(name_parts[i]) >= maxchar:
-                name = '.../' + name
-                break
-            name = name_parts[i] + '/' + name
-        return name
-    
-    def is_dict(self):
+    def isDict(self):
         return isinstance(self.value, dict)
     
-    def is_list(self):
+    def isList(self):
         return isinstance(self.value, list)
     
-    def is_container(self):
-        return self.is_dict() or self.is_list()
+    def isContainer(self):
+        return self.isDict() or self.isList()
+    
+    # tree navigation ----------------------------------------------------------
+    
+    @property
+    def path(self) -> str:
+        item = self
+        path = []
+        while not item.isRoot():
+            path.insert(0, str(item.key))
+            item = item.parent
+        return '/' + '/'.join(path)
+    
+    def __getitem__(self, path: str) -> KeyValueTreeItem:
+        """ Return item at path either from the root item (if path starts with /) or otherwise from this item. """
+        if path.startswith('/'):
+            # path from root item (first name in path must be a child of the root item)
+            item = self.root()
+        else:
+            # path from this item (first name in path must be a child of this item)
+            item = self
+        path = path.strip('/').split('/')
+        for key in path:
+            child_keys = [str(child.key) for child in item.children]
+            child_index = child_keys.index(key)
+            item = item.children[child_index]
+        return item
+    
+    # tree restructuring ------------------------------------------------------
+    
+    def setParent(self, parent: KeyValueTreeItem | None) -> None:
+        """ Set the parent of this item.
+        
+            This is the main linkage function.
+            All other tree linkage functions use this.
+            This results in appending self to parent's list of children.
+        """
+        if self.parent is parent:
+            return
+        if (parent is not None) and (not parent.isContainer()):
+            raise ValueError('Parent must be a container type (dict or list).')
+        if self.parent is not None:
+            # detach from old parent
+            if self in self.parent.children:
+                # remove value from parent container
+                self.parent._value.pop(self.key)
+                # remove item from parent's children
+                self.parent.children.remove(self)
+            self.parent = None
+        if parent is not None:
+            # attach to new parent
+            if self not in parent.children:
+                # insert into parent's children
+                parent.children.append(self)
+                # insert value into parent container
+                if parent.isDict():
+                    parent._value[self.key] = self.value
+                elif parent.isList():
+                    key = parent.children.index(self)
+                    if key < len(parent._value):
+                        parent._value[key] = self.value
+                    else:
+                        parent._value.append(self.value)
+            self.parent = parent
+    
+    def insertChild(self, index: int, item: KeyValueTreeItem) -> None:
+        if self.isDict():
+            if item.key is None:
+                item.setParent(None)
+                item.key = 'None'
+            if item.key in self.value:
+                item.setParent(None)
+                item.key = unique_name(item.key, list(self.value.keys()))
+        item.setParent(self)
+        # move item to index
+        pos = self.children.index(item)
+        if pos != index:
+            self.children.insert(index, self.children.pop(pos))
+            if self.isList():
+                self._value.insert(index, self._value.pop(pos))
+    
+    # interface for QAbstractItemModel ----------------------------------------
     
     def data(self, column: int):
         if column == 0:
             return self.key
         elif column == 1:
-            if self.is_container():
+            if self.isContainer():
                 return
             return self.value
     
-    def set_data(self, column: int, value) -> bool:
+    def setData(self, column: int, value) -> bool:
         if column == 0:
             self.key = value
             return True
         elif column == 1:
-            if self.is_container():
+            if self.isContainer():
                 return False
             self.value = value
             return True
         return False
 
-    def remove_children(self, position: int, count: int) -> bool:
-        if position < 0 or position + count > len(self.children):
-            return False
-        if not self.is_container():
-            return False
-        for row in range(count):
-            item: KeyValueTreeItem = self.children.pop(position)
-            item.parent = None
-            del self._value[item.key]
-        return True
-    
-    def insert_children(self, position: int, items: list[KeyValueTreeItem]) -> bool:
-        if position < 0 or position > len(self.children):
-            return False
-        if not self.is_container():
-            return False
-        for i, item in enumerate(items):
-            if self.is_dict():
-                if item.key in self.value:
-                    # raise KeyError(f'Key "{item.key}" already exists in parent dict.')
-                    item.key = str(item.key) + '_1'
-                    while item.key in self.value:
-                        pos = item.key.rfind('_')
-                        item.key = item.key[:pos+1] + str(int(item.key[pos+1:]) + 1)
-                self._value[item.key] = item.value
-            elif self.is_list():
-                self._value.insert(position + i, item.value)
-            item.parent = self
-            self.children.insert(position + i, item)
-        return True
-    
-    def to_obj(self):
-        if self.is_dict():
-            return {child.key: child.to_obj() for child in self.children}
-        elif self.is_list():
-            return [child.to_obj() for child in self.children]
-        else:
-            return self.value
+
+def unique_name(name: str, names: list[str]) -> str:
+    if name not in names:
+        return name
+    i: int = 1
+    uname = name + f'_{i}'
+    while uname in names:
+        i += 1
+        uname = name + f'_{i}'
+    return uname
 
 
 def test_tree():
@@ -160,6 +196,34 @@ def test_tree():
         },
     }
     root = KeyValueTreeItem('/', data)
+    root.dump()
+
+    root.removeChild(root['/a'])
+    root.dump()
+
+    d = root['c/d']
+    f = root['c/d/f']
+    d.removeChild(f)
+    root.dump()
+
+    d.setParent(root)
+    root.dump()
+
+    root.insertChild(1, d)
+    root.dump()
+
+    b = root['b']
+    b.insertChild(2, d)
+    root.dump()
+
+    b.removeChild(b['1'])
+    root.dump()
+
+    c = root['c']
+    c.value['me'] = 'bye'
+    root.dump()
+
+    c.insertChild(0, b['1'])
     root.dump()
 
 

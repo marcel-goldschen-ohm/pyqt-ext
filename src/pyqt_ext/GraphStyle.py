@@ -10,7 +10,7 @@ from qtpy.QtWidgets import *
 from pyqt_ext import ColorType, toQColor, toColorStr, ColorButton
 
 
-class ChartDataStyle(dict):
+class GraphStyle(dict):
     """ Hashable style dict for (x,y) data.
 
     'Color': str
@@ -99,7 +99,7 @@ class ChartDataStyle(dict):
         return self.get('MarkerEdgeColor', 'auto')
     
     def setMarkerEdgeColor(self, value: ColorType):
-        self['MarkerEdgeColor'] = ChartDataStyle.toColorStr(value)
+        self['MarkerEdgeColor'] = GraphStyle.toColorStr(value)
     
     def markerEdgeQColor(self) -> QColor:
         return toQColor(self.markerEdgeColor(), self._special_colors)
@@ -108,13 +108,13 @@ class ChartDataStyle(dict):
         return self.get('MarkerFaceColor', 'auto')
     
     def setMarkerFaceColor(self, value: ColorType):
-        self['MarkerFaceColor'] = ChartDataStyle.toColorStr(value)
+        self['MarkerFaceColor'] = GraphStyle.toColorStr(value)
     
     def markerFaceQColor(self) -> QColor:
         return toQColor(self.markerFaceColor(), self._special_colors)
 
 
-class ChartDataStylePanel(QWidget):
+class GraphStylePanel(QWidget):
 
     def __init__(self, *args, **kwargs):
         QWidget.__init__(self, *args, **kwargs)
@@ -195,8 +195,8 @@ class ChartDataStylePanel(QWidget):
         self.markerFaceColorButton.setVisible(not self.autoMarkerFaceColorCheckBox.isChecked())
         form.addRow('Marker Face Color', markerFaceColorLayout)
     
-    def dataStyle(self) -> ChartDataStyle:
-        style = ChartDataStyle()
+    def dataStyle(self) -> GraphStyle:
+        style = GraphStyle()
         if self.autoColorCheckBox.isChecked():
             style.setColor('auto')
         else:
@@ -216,7 +216,7 @@ class ChartDataStylePanel(QWidget):
             style.setMarkerFaceColor(self.markerFaceColorButton.color())
         return style
     
-    def setDataStyle(self, style: ChartDataStyle):
+    def setDataStyle(self, style: GraphStyle):
         # color
         self.autoColorCheckBox.setChecked(style.color() == 'auto')
         if self.autoColorCheckBox.isChecked():
@@ -253,8 +253,8 @@ class ChartDataStylePanel(QWidget):
             self.markerFaceColorButton.setColor(style.markerFaceQColor())
     
 
-def editChartDataStyle(style: ChartDataStyle, parent: QWidget = None, title: str = None) -> ChartDataStyle | None:
-    panel = ChartDataStylePanel()
+def editGraphStyle(style: GraphStyle, parent: QWidget = None, title: str = None) -> GraphStyle | None:
+    panel = GraphStylePanel()
     panel.setDataStyle(style)
 
     dlg = QDialog(parent)
@@ -278,7 +278,7 @@ def editChartDataStyle(style: ChartDataStyle, parent: QWidget = None, title: str
 def test_live():
     import sys 
     app = QApplication(sys.argv)
-    ui = ChartDataStylePanel()
+    ui = GraphStylePanel()
     ui.show()
     status = app.exec()
     sys.exit(status)

@@ -40,7 +40,7 @@ class AbstractTreeModel(QAbstractItemModel):
         first_change = 0
         while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
             first_change += 1
-        last_change = max(len(row_labels), len(oldLabels)) - 1
+        last_change = max(len(labels), len(old_labels)) - 1
         while (last_change < n_overlap) and (labels[last_change] == old_labels[last_change]):
             last_change -= 1
         self._row_labels = labels
@@ -56,7 +56,7 @@ class AbstractTreeModel(QAbstractItemModel):
         first_change = 0
         while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
             first_change += 1
-        last_change = max(len(row_labels), len(oldLabels)) - 1
+        last_change = max(len(labels), len(old_labels)) - 1
         while (last_change < n_overlap) and (labels[last_change] == old_labels[last_change]):
             last_change -= 1
         self._column_labels = labels
@@ -131,7 +131,7 @@ class AbstractTreeModel(QAbstractItemModel):
             return False
         item: AbstractTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.EditRole:
-            success: bool = item.set_data(index.column(), value)
+            success: bool = item.setData(index.column(), value)
             return success
         return False
 
