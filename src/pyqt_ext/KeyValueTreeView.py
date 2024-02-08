@@ -27,11 +27,11 @@ class KeyValueTreeView(AbstractTreeView):
         menu.addSeparator()
         menu.addMenu(self._insertMenu(parentIndex=model.parent(index), row=item.row(), title='Insert before'))
         menu.addMenu(self._insertMenu(parentIndex=model.parent(index), row=item.row() + 1, title='Insert after'))
-        if item.isContainer():
+        if item.is_container():
             menu.addMenu(self._insertMenu(parentIndex=index, row=len(item.children), title='Append child'))
         
         menu.addSeparator()
-        menu.addAction('Delete', lambda item=item: self.askToDeleteItem(item))
+        menu.addAction('Delete', lambda item=item: self.askToRemoveItem(item))
         return menu
     
     def _insertMenu(self, parentIndex: QModelIndex, row: int, title: str = 'Insert') -> QMenu:
@@ -45,11 +45,11 @@ class KeyValueTreeView(AbstractTreeView):
         menu.addAction('list', lambda model=model, row=row, item=KeyValueTreeItem('list', []), parentIndex=parentIndex: model.insertItems(row, [item], parentIndex))
         return menu
     
-    def askToDeleteItem(self, item: KeyValueTreeItem):
-        itemPath = item.path
-        if len(itemPath) > 50:
-            itemPath = '...' + itemPath[-47:]
-        answer = QMessageBox.question(self, 'Delete', f'Delete {itemPath}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+    def askToRemoveItem(self, item: KeyValueTreeItem):
+        item_path = item.path
+        if len(item_path) > 50:
+            item_path = '...' + item_path[-47:]
+        answer = QMessageBox.question(self, 'Delete', f'Delete {item_path}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
         if answer == QMessageBox.StandardButton.Yes:
             model: KeyValueTreeModel = self.model()
             model.removeItem(item)

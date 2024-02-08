@@ -25,14 +25,14 @@ class KeyValueTreeModel(AbstractTreeModel):
                 return Qt.ItemFlag.ItemIsDropEnabled
             return Qt.ItemFlag.NoItemFlags
         item: KeyValueTreeItem = self.itemFromIndex(index)
-        if (index.column() == 1) and item.isContainer():
+        if (index.column() == 1) and item.is_container():
             # cannot edit container value, only the values of items inside it
             flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
         else:
             flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
             flags |= Qt.ItemFlag.ItemIsDragEnabled
-            if item.isContainer():
+            if item.is_container():
                 flags |= Qt.ItemFlag.ItemIsDropEnabled
         return flags
 
@@ -46,9 +46,9 @@ class KeyValueTreeModel(AbstractTreeModel):
             return item.data(index.column())
         elif role == Qt.ItemDataRole.DecorationRole:
             if index.column() == 0:
-                if item.isDict():
+                if item.is_dict():
                     return qta.icon('ph.folder-thin')
-                if item.isList():
+                if item.is_list():
                     return qta.icon('ph.list-numbers-thin')
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
@@ -62,7 +62,7 @@ class KeyValueTreeModel(AbstractTreeModel):
                 item.key = value
                 return True
             elif index.column() == 1:
-                if item.isContainer():
+                if item.is_container():
                     return False
                 item.value = value
                 return True
