@@ -3,9 +3,6 @@
 
 from __future__ import annotations
 from collections.abc import Iterator
-# from qtpy.QtCore import *
-# from qtpy.QtGui import *
-# from qtpy.QtWidgets import *
 
 
 class AbstractTreeItem():
