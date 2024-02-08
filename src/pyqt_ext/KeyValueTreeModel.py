@@ -11,8 +11,8 @@ import qtawesome as qta
 
 class KeyValueTreeModel(AbstractTreeModel):
     
-    def __init__(self, root_item: KeyValueTreeItem = None, parent_qobject: QObject = None):
-        AbstractTreeModel.__init__(self, root_item, parent_qobject)
+    def __init__(self, root: KeyValueTreeItem = None, parent: QObject = None):
+        AbstractTreeModel.__init__(self, root, parent)
         self.setColumnLabels(['Key', 'Value'])
     
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
@@ -71,8 +71,8 @@ class KeyValueTreeModel(AbstractTreeModel):
 
 class KeyValueDndTreeModel(KeyValueTreeModel):
 
-    def __init__(self, root_item: KeyValueTreeItem = None, parent_qobject: QObject = None):
-        KeyValueTreeModel.__init__(self, root_item, parent_qobject)
+    def __init__(self, root: KeyValueTreeItem = None, parent: QObject = None):
+        KeyValueTreeModel.__init__(self, root, parent)
     
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.DropAction.MoveAction | Qt.DropAction.CopyAction

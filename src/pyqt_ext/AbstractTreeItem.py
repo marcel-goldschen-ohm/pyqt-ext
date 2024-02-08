@@ -38,15 +38,15 @@ class AbstractTreeItem():
             if item is self:
                 continue
             if item is item.parent.last_child:
-                lines[i] = '\u2514' + '\u2500'*2 + lines[i]
+                lines[i] = '\u2514' + '\u2500'*2 + ' ' + lines[i]
             else:
-                lines[i] = '\u251C' + '\u2500'*2 + lines[i]
+                lines[i] = '\u251C' + '\u2500'*2 + ' ' + lines[i]
             parent = item.parent
             while parent is not self:
                 if i < items.index(parent.last_sibling):
-                    lines[i] = '\u2502  ' + lines[i]
+                    lines[i] = '\u2502' + ' '*3 + lines[i]
                 else:
-                    lines[i] = '   ' + lines[i]
+                    lines[i] = ' '*4 + lines[i]
                 parent = parent.parent
         return '\n'.join(lines)
     

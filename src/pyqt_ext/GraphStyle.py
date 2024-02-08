@@ -195,7 +195,7 @@ class GraphStylePanel(QWidget):
         self.markerFaceColorButton.setVisible(not self.autoMarkerFaceColorCheckBox.isChecked())
         form.addRow('Marker Face Color', markerFaceColorLayout)
     
-    def dataStyle(self) -> GraphStyle:
+    def graphStyle(self) -> GraphStyle:
         style = GraphStyle()
         if self.autoColorCheckBox.isChecked():
             style.setColor('auto')
@@ -216,7 +216,7 @@ class GraphStylePanel(QWidget):
             style.setMarkerFaceColor(self.markerFaceColorButton.color())
         return style
     
-    def setDataStyle(self, style: GraphStyle):
+    def setGraphStyle(self, style: GraphStyle):
         # color
         self.autoColorCheckBox.setChecked(style.color() == 'auto')
         if self.autoColorCheckBox.isChecked():
@@ -255,7 +255,7 @@ class GraphStylePanel(QWidget):
 
 def editGraphStyle(style: GraphStyle, parent: QWidget = None, title: str = None) -> GraphStyle | None:
     panel = GraphStylePanel()
-    panel.setDataStyle(style)
+    panel.setGraphStyle(style)
 
     dlg = QDialog(parent)
     vbox = QVBoxLayout(dlg)
@@ -272,7 +272,7 @@ def editGraphStyle(style: GraphStyle, parent: QWidget = None, title: str = None)
         dlg.setWindowTitle(title)
     dlg.setWindowModality(Qt.ApplicationModal)
     if dlg.exec() == QDialog.Accepted:
-        return panel.dataStyle()
+        return panel.graphStyle()
 
 
 def test_live():
