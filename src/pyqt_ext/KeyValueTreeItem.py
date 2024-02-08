@@ -75,7 +75,7 @@ class KeyValueTreeItem(AbstractTreeItem):
     def path(self) -> str:
         item = self
         path = []
-        while not item.isRoot():
+        while not item.is_root():
             path.insert(0, str(item.key))
             item = item.parent
         return '/' + '/'.join(path)
@@ -132,7 +132,7 @@ class KeyValueTreeItem(AbstractTreeItem):
                         parent._value.append(self.value)
             self.parent = parent
     
-    def insertChild(self, index: int, item: KeyValueTreeItem) -> None:
+    def insert_child(self, index: int, item: KeyValueTreeItem) -> None:
         if self.isDict():
             if item.key is None:
                 item.setParent(None)
@@ -158,7 +158,7 @@ class KeyValueTreeItem(AbstractTreeItem):
                 return
             return self.value
     
-    def setData(self, column: int, value) -> bool:
+    def set_data(self, column: int, value) -> bool:
         if column == 0:
             self.key = value
             return True
@@ -198,32 +198,32 @@ def test_tree():
     root = KeyValueTreeItem('/', data)
     root.dump()
 
-    root.removeChild(root['/a'])
+    root.remove_child(root['/a'])
     root.dump()
 
     d = root['c/d']
     f = root['c/d/f']
-    d.removeChild(f)
+    d.remove_child(f)
     root.dump()
 
     d.setParent(root)
     root.dump()
 
-    root.insertChild(1, d)
+    root.insert_child(1, d)
     root.dump()
 
     b = root['b']
-    b.insertChild(2, d)
+    b.insert_child(2, d)
     root.dump()
 
-    b.removeChild(b['1'])
+    b.remove_child(b['1'])
     root.dump()
 
     c = root['c']
     c.value['me'] = 'bye'
     root.dump()
 
-    c.insertChild(0, b['1'])
+    c.insert_child(0, b['1'])
     root.dump()
 
 

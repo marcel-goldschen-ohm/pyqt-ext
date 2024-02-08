@@ -2,9 +2,10 @@
 """
 
 from __future__ import annotations
-from qtpy.QtCore import *
-from qtpy.QtGui import *
-from qtpy.QtWidgets import *
+from collections.abc import Iterator
+# from qtpy.QtCore import *
+# from qtpy.QtGui import *
+# from qtpy.QtWidgets import *
 
 
 class AbstractTreeItem():
@@ -14,31 +15,50 @@ class AbstractTreeItem():
 
     In a derived class:
         1. Add attributes to store/interface with your data.
-        2. Reimplement data(), setData(), and __repr__() methods.
-        3. If needed, reimplement setParent() and insertChild() methods to handle special linkage rules.
+        2. Minimally reimplement data() and set_data() methods.
+        3. For nice printout, you may want to reimplement __repr__() method.
+        3. For special linkage rules you may need to reimplement parent.setter and insert_child().
     """
     
     def __init__(self, parent: AbstractTreeItem | None = None):
-        self.parent: AbstractTreeItem = None
-        self.children: list[AbstractTreeItem] = []
-        # set linkage
-        self.setParent(parent)
+        self._parent: AbstractTreeItem | None = None
+        self._children: list[AbstractTreeItem] = []
+       
+        # handle linkage
+        self.parent = parent
     
-    # !!! not implemented
     def __repr__(self):
+        # Return a single line string representation of this item.
+        # See __str__ for a multi-line representation of the tree.
         # raise NotImplementedError
-        return str(id(self))  # for debugging
+        return self.__class__.__name__ + ' at ' + str(id(self))  # for debugging
     
-    # tree restructuring ------------------------------------------------------
+    def __str__(self):
+        # returns a multi-line string representation of this item's tree branch
+        items: list[AbstractTreeItem] = list(self.depth_first())
+        lines: list[str] = [repr(item) for item in items]
+        for i, item in enumerate(items):
+            if item is self:
+                continue
+            if item is item.parent.last_child:
+                lines[i] = '\u2514' + '\u2500'*2 + lines[i]
+            else:
+                lines[i] = '\u251C' + '\u2500'*2 + lines[i]
+            parent = item.parent
+            while parent is not self:
+                if i < items.index(parent.last_sibling):
+                    lines[i] = '\u2502  ' + lines[i]
+                else:
+                    lines[i] = '   ' + lines[i]
+                parent = parent.parent
+        return '\n'.join(lines)
     
-    # !!! for special linkage rules, first see if reimplementing this method is enough
-    def setParent(self, parent: AbstractTreeItem | None) -> None:
-        """ Set the parent of this item.
-        
-            This is the main linkage function.
-            All other tree linkage functions use this.
-            This results in appending self to parent's list of children.
-        """
+    @property
+    def parent(self) -> AbstractTreeItem | None:
+        return self._parent
+    
+    @parent.setter
+    def parent(self, parent: AbstractTreeItem | None) -> None:
         if self.parent is parent:
             return
         if self.parent is not None:
@@ -49,115 +69,92 @@ class AbstractTreeItem():
             # attach to new parent
             if self not in parent.children:
                 parent.children.append(self)
-        self.parent = parent
+        self._parent = parent
     
-    def appendChild(self, item: AbstractTreeItem) -> None:
-        item.setParent(self)
+    @property
+    def children(self) -> list[AbstractTreeItem]:
+        return self._children
     
-    def insertChild(self, index: int, item: AbstractTreeItem) -> None:
-        item.setParent(self)
-        # move item to index
-        pos = self.children.index(item)
-        if pos != index:
-            self.children.insert(index, self.children.pop(pos))
-    
-    def removeChild(self, item: AbstractTreeItem) -> None:
-        if item.parent is not self:
-            return
-        item.setParent(None)
-    
-    # interface for QAbstractItemModel ----------------------------------------
-    
-    def row(self) -> int:
-        return self.siblingIndex()
-    
-    # !!! not implemented
-    def data(self, column: int):
-        # raise NotImplementedError
-        return self.__repr__()  # for debugging
-    
-    # !!! not implemented
-    def setData(self, column: int, value) -> bool:
-        # raise NotImplementedError
-        return False
-    
-    def removeChildren(self, position: int, count: int) -> bool:
-        if position < 0 or position + count > len(self.children):
-            return False
-        for _ in range(count):
-            item: AbstractTreeItem = self.children[position]
-            self.removeChild(item)
-        return True
-    
-    def insertChildren(self, position: int, items: list[AbstractTreeItem]) -> bool:
-        if position < 0 or position > len(self.children):
-            return False
-        for i, item in enumerate(items):
-            self.insertChild(position + i, item)
-        return True
-    
-    def appendChildren(self, items: list[AbstractTreeItem]) -> bool:
-        for item in items:
-            self.appendChild(item)
-        return True
-    
-    # tree linkage ------------------------------------------------------------
-    
+    @property
     def root(self) -> AbstractTreeItem:
         item: AbstractTreeItem = self
         while item.parent is not None:
             item = item.parent
         return item
     
-    def firstChild(self) -> AbstractTreeItem | None:
+    @property
+    def first_child(self) -> AbstractTreeItem | None:
         if self.children:
             return self.children[0]
 
-    def lastChild(self) -> AbstractTreeItem | None:
+    @property
+    def last_child(self) -> AbstractTreeItem | None:
         if self.children:
             return self.children[-1]
 
-    def firstSibling(self) -> AbstractTreeItem:
+    @property
+    def first_sibling(self) -> AbstractTreeItem:
         if self.parent is not None:
-            return self.parent.firstChild()
+            return self.parent.first_child
         return self
 
-    def lastSibling(self) -> AbstractTreeItem:
+    @property
+    def last_sibling(self) -> AbstractTreeItem:
         if self.parent is not None:
-            return self.parent.lastChild()
+            return self.parent.last_child
         return self
 
+    @property
     def siblings(self) -> list[AbstractTreeItem]:
         if self.parent is not None:
-            return self.parent.children
+            return self.parent.children.copy()
         return [self]
     
-    def nextSibling(self) -> AbstractTreeItem | None:
-        siblings: list[AbstractTreeItem] = self.siblings()
+    @property
+    def next_sibling(self) -> AbstractTreeItem | None:
+        siblings: list[AbstractTreeItem] = self.siblings
         if siblings:
             i: int = siblings.index(self)
             if i+1 < len(siblings):
                 return siblings[i+1]
 
-    def prevSibling(self) -> AbstractTreeItem | None:
-        siblings: list[AbstractTreeItem] = self.siblings()
+    @property
+    def prev_sibling(self) -> AbstractTreeItem | None:
+        siblings: list[AbstractTreeItem] = self.siblings
         if siblings:
             i: int = siblings.index(self)
             if i-1 >= 0:
                 return siblings[i-1]
 
-    def siblingIndex(self) -> int:
+    @property
+    def sibling_index(self) -> int:
         if self.parent is None:
             return 0
         return self.parent.children.index(self)
     
-    def isRoot(self) -> bool:
+    def depth(self, root: AbstractTreeItem = None) -> int:
+        depth: int = 0
+        item: AbstractTreeItem = self
+        while (item.parent is not None) and (item is not root):
+            depth += 1
+            item = item.parent
+        return depth
+    
+    def branch_max_depth(self) -> int:
+        max_depth: int = 0
+        for item in self.depth_first():
+            depth: int = item.depth(self)
+            if depth > max_depth:
+                max_depth = depth
+        return max_depth
+    
+    def is_root(self) -> bool:
         return self.parent is None
     
-    def isLeaf(self) -> bool:
+    def is_leaf(self) -> bool:
         return not self.children
     
-    def hasAncestor(self, ancestor: AbstractTreeItem) -> bool:
+    def has_ancestor(self, ancestor: AbstractTreeItem) -> bool:
         item: AbstractTreeItem = self
         while item is not None:
             if item is ancestor:
@@ -165,67 +162,85 @@ class AbstractTreeItem():
             item = item.parent
         return False
     
-    def depth(self) -> int:
-        depth: int = 0
+    def append_child(self, item: AbstractTreeItem) -> None:
+        item.parent = self
+    
+    def insert_child(self, index: int, item: AbstractTreeItem) -> None:
+        item.parent = self
+        # move item to index
+        pos = self.children.index(item)
+        if pos != index:
+            self.children.insert(index, self.children.pop(pos))
+    
+    def remove_child(self, item: AbstractTreeItem) -> None:
+        if item.parent is not self:
+            return
+        item.parent = None
+    
+    # depth-first iteration --------------------------------------------------
+    
+    def depth_first(self) -> Iterator[AbstractTreeItem]:
         item: AbstractTreeItem = self
-        while item.parent is not None:
-            depth += 1
-            item = item.parent
-        return depth
-    
-    def subtreeMaxDepth(self) -> int:
-        root_depth: int = self.depth()
-        max_depth: int = 0
-        item: AbstractTreeItem = self.next()
         while item is not None:
-            depth: int = item.depth()
-            if depth - root_depth > max_depth:
-                max_depth = depth - root_depth
-            item = item.next()
-        return max_depth
+            yield item
+            item = item._next_depth_first()
     
-    # depth first traversal --------------------------------------------------
-
-    def next(self) -> AbstractTreeItem | None:
+    def depth_first_reversed(self) -> Iterator[AbstractTreeItem]:
+        item: AbstractTreeItem = self._last_depth_first()
+        while item is not None:
+            yield item
+            if item is self:
+                break
+            item = item._prev_depth_first()
+    
+    def _next_depth_first(self) -> AbstractTreeItem | None:
         if self.children:
-            return self.firstChild()
-        next_sibling: AbstractTreeItem = self.nextSibling()
+            return self.first_child
+        next_sibling: AbstractTreeItem = self.next_sibling
         if next_sibling is not None:
             return next_sibling
         item: AbstractTreeItem = self.parent
         while item is not None:
-            next_sibling: AbstractTreeItem = item.nextSibling()
+            next_sibling: AbstractTreeItem = item.next_sibling
             if next_sibling is not None:
                 return next_sibling
             item = item.parent
 
-    def prev(self) -> AbstractTreeItem | None:
-        prev_sibling: AbstractTreeItem = self.prevSibling()
+    def _prev_depth_first(self) -> AbstractTreeItem | None:
+        prev_sibling: AbstractTreeItem = self.prev_sibling
         if prev_sibling is not None:
-            return prev_sibling.last()
+            return prev_sibling._last_depth_first()
         if self.parent is not None:
             return self.parent
     
-    def last(self) -> AbstractTreeItem:
+    def _last_depth_first(self) -> AbstractTreeItem:
         item: AbstractTreeItem = self
         while item.children:
-            item = item.lastChild()
+            item = item.last_child
         return item
 
-    # debugging --------------------------------------------------------------
+    # interface for QAbstractItemModel ----------------------------------------
     
-    def dump(self, indent: int = 0):
-        print(' ' * indent + self.__repr__())
-        for child in self.children:
-            child.dump(indent + 4)
+    def data(self, column: int):
+        # raise NotImplementedError
+        return repr(self)  # for debugging
+    
+    def set_data(self, column: int, value) -> bool:
+        # raise NotImplementedError
+        return False
 
 
 def test_tree():
     root = AbstractTreeItem()
-    root.insertChildren(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
-    root.children[-1].insertChildren(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
-    root.children[-1].children[0].insertChildren(0, [AbstractTreeItem(), AbstractTreeItem()])
-    root.dump()
+    root.append_child(AbstractTreeItem())
+    root.append_child(AbstractTreeItem())
+    root.append_child(AbstractTreeItem())
+    root.children[-1].append_child(AbstractTreeItem())
+    root.children[-1].append_child(AbstractTreeItem())
+    root.children[-1].append_child(AbstractTreeItem())
+    root.children[-1].children[0].append_child(AbstractTreeItem())
+    root.children[-1].children[0].append_child(AbstractTreeItem())
+    print(root)
 
 
 if __name__ == '__main__':

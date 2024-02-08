@@ -17,25 +17,25 @@ class AbstractTreeModel(QAbstractItemModel):
     For drag and drop, reimplement the supportedDropActions() and flags() methods.
     """
 
-    def __init__(self, root_item: AbstractTreeItem = None, parent_qobject: QObject = None):
-        QAbstractItemModel.__init__(self, parent_qobject)
-        self._root_item: AbstractTreeItem = root_item
+    def __init__(self, root: AbstractTreeItem = None, parent: QObject = None):
+        QAbstractItemModel.__init__(self, parent)
+        self._root: AbstractTreeItem = root
         self._row_labels: list = []
         self._column_labels: list = []
     
     def root(self) -> AbstractTreeItem:
-        return self._root_item
+        return self._root
     
-    def setRoot(self, root_item: AbstractTreeItem) -> None:
+    def setRoot(self, root: AbstractTreeItem) -> None:
         self.beginResetModel()
-        self._root_item = root_item
+        self._root = root
         self.endResetModel()
     
     def rowLabels(self) -> list:
         return self._row_labels
     
     def setRowLabels(self, labels: list) -> None:
-        old_labels = self.rowLabels()
+        old_labels = self._row_labels
         n_overlap = min(len(labels), len(old_labels))
         first_change = 0
         while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
@@ -51,7 +51,7 @@ class AbstractTreeModel(QAbstractItemModel):
         return self._column_labels
     
     def setColumnLabels(self, labels: list | None) -> None:
-        old_labels = self.columnLabels()
+        old_labels = self._column_labels
         n_overlap = min(len(labels), len(old_labels))
         first_change = 0
         while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
@@ -62,6 +62,12 @@ class AbstractTreeModel(QAbstractItemModel):
         self._column_labels = labels
         if first_change <= last_change: 
             self.headerDataChanged.emit(Qt.Orientation.Horizontal, first_change, last_change)
+    
+    def maxDepth(self):
+        root: AbstractTreeItem = self.root()
+        if root is None:
+            return 0
+        return root.branch_max_depth() - 1
     
     def rowCount(self, parent_index: QModelIndex = QModelIndex()) -> int:
         if parent_index.column() > 0:
@@ -92,7 +98,7 @@ class AbstractTreeModel(QAbstractItemModel):
         parent_item: AbstractTreeItem = item.parent
         if parent_item is None or parent_item is self.root():
             return QModelIndex()
-        row: int = parent_item.row()
+        row: int = parent_item.sibling_index
         col: int = 0
         return self.createIndex(row, col, parent_item)
 
@@ -127,11 +133,9 @@ class AbstractTreeModel(QAbstractItemModel):
             return item.data(index.column())
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
-        if role != Qt.ItemDataRole.EditRole:
-            return False
         item: AbstractTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.EditRole:
-            success: bool = item.setData(index.column(), value)
+            success: bool = item.set_data(index.column(), value)
             return success
         return False
 
@@ -141,10 +145,9 @@ class AbstractTreeModel(QAbstractItemModel):
                 labels = self.columnLabels()
             elif orientation == Qt.Orientation.Vertical:
                 labels = self.rowLabels()
-            if labels is None:
-                return section
             if section < len(labels):
                 return labels[section]
+            return section
 
     def setHeaderData(self, section: int, orientation: Qt.Orientation, value, role: int) -> bool:
         if role == Qt.ItemDataRole.EditRole:
@@ -152,9 +155,7 @@ class AbstractTreeModel(QAbstractItemModel):
                 labels = self.columnLabels()
             elif orientation == Qt.Orientation.Vertical:
                 labels = self.rowLabels()
-            if labels is None:
-                labels = [None] * section + [value]
-            elif section < len(labels):
+            if section < len(labels):
                 labels[section] = value
             else:
                 first = len(labels)
@@ -171,9 +172,11 @@ class AbstractTreeModel(QAbstractItemModel):
         if row < 0 or row + count > len(parent_item.children):
             return False
         self.beginRemoveRows(parent_index, row, row + count - 1)
-        success: bool = parent_item.removeChildren(row, count)
+        for _ in range(count):
+            item: AbstractTreeItem = parent_item.children[row]
+            parent_item.remove_child(item)
         self.endRemoveRows()
-        return success
+        return True
     
     def removeItem(self, item: AbstractTreeItem) -> bool:
         parent_item: AbstractTreeItem = item.parent
@@ -193,19 +196,20 @@ class AbstractTreeModel(QAbstractItemModel):
             return False
         count: int = len(items)
         self.beginInsertRows(parent_index, row, row + count - 1)
-        success: bool = parent_item.insertChildren(row, items)
+        for i, item in enumerate(items):
+            parent_item.insert_child(row + i, item)
         self.endInsertRows()
-        return success
+        return True
     
     def moveRow(self, src_parent_index: QModelIndex, src_row: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
-        if (src_parent_index == dst_parent_index) and (src_row == dst_row):
-            return False
         if src_row < 0:
             # negative indexing
             src_row += self.rowCount(src_parent_index)
         if dst_row < 0:
             # negative indexing
             dst_row += self.rowCount(dst_parent_index)
+        if (src_parent_index == dst_parent_index) and (src_row == dst_row):
+            return False
         if not (0 <= src_row < self.rowCount(src_parent_index)):
             return False
         if not (0 <= dst_row <= self.rowCount(dst_parent_index)):
@@ -216,25 +220,19 @@ class AbstractTreeModel(QAbstractItemModel):
         dst_parent_item: AbstractTreeItem = self.itemFromIndex(dst_parent_index)
 
         self.beginMoveRows(src_parent_index, src_row, src_row, dst_parent_index, dst_row)
-        dst_parent_item.insertChild(dst_row, src_item)
+        dst_parent_item.insert_child(dst_row, src_item)
         self.endMoveRows()
         return True
     
     # !!! reimplement for drag and drop
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.DropAction.IgnoreAction
-    
-    def maxDepth(self):
-        root: AbstractTreeItem = self.root()
-        if root is None:
-            return 0
-        return root.subtreeMaxDepth() - 1
 
 
 class AbstractDndTreeModel(AbstractTreeModel):
 
-    def __init__(self, root_item: AbstractTreeItem = None, parent_qobject: QObject = None):
-        AbstractTreeModel.__init__(self, root_item, parent_qobject)
+    def __init__(self, root: AbstractTreeItem = None, parent: QObject = None):
+        AbstractTreeModel.__init__(self, root, parent)
     
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.DropAction.MoveAction | Qt.DropAction.CopyAction

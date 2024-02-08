@@ -72,19 +72,16 @@ class AbstractTreeView(QTreeView):
             menu.addAction('Clear Selection', self.clearSelection)
         return menu
     
-    @Slot()
     def expandAll(self):
         QTreeView.expandAll(self)
         model: AbstractTreeModel = self.model()
         if model is not None:
             self._depth = model.maxDepth()
     
-    @Slot()
     def collapseAll(self):
         QTreeView.collapseAll(self)
         self._depth = 0
     
-    @Slot(int)
     def expandToDepth(self, depth: int):
         model: AbstractTreeModel = self.model()
         if model is not None:
@@ -101,6 +98,12 @@ class AbstractTreeView(QTreeView):
             return
         for col in range(model.columnCount()):
             self.resizeColumnToContents(col)
+    
+    def askToRemoveItem(self, item: AbstractTreeItem):
+        answer = QMessageBox.question(self, 'Remove', f'Remove {repr(item)}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if answer == QMessageBox.StandardButton.Yes:
+            model: AbstractTreeModel = self.model()
+            model.removeItem(item)
     
     def eventFilter(self, obj: QObject, event: QEvent):
         if event.type() == QEvent.Wheel:
@@ -163,18 +166,12 @@ class AbstractTreeView(QTreeView):
         
         src_item: AbstractTreeItem = model.itemFromIndex(src_index)
         dst_parent_item: AbstractTreeItem = model.itemFromIndex(dst_parent_index)
-        if dst_parent_item.hasAncestor(src_item):
+        if dst_parent_item.has_ancestor(src_item):
             event.ignore()
             return
         
         if event.dropAction() == Qt.DropAction.MoveAction:
-            # old_max_depth = model.max_depth()
             model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
-            # moved_index = model.index(dst_row, 0, dst_parent_index)
-            # model.infoChanged.emit(moved_index)
-            # new_max_depth = model.max_depth()
-            # if new_max_depth != old_max_depth:
-            #     model.maxDepthChanged.emit(new_max_depth)
         else:
             event.ignore()
             return
@@ -198,9 +195,14 @@ def test_live():
     app = QApplication()
 
     root = AbstractTreeItem()
-    root.insertChildren(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
-    root.children[-1].insertChildren(0, [AbstractTreeItem(), AbstractTreeItem(), AbstractTreeItem()])
-    root.children[-1].children[0].insertChildren(0, [AbstractTreeItem(), AbstractTreeItem()])
+    root.append_child(AbstractTreeItem())
+    root.append_child(AbstractTreeItem())
+    root.append_child(AbstractTreeItem())
+    root.children[-1].append_child(AbstractTreeItem())
+    root.children[-1].append_child(AbstractTreeItem())
+    root.children[-1].append_child(AbstractTreeItem())
+    root.children[-1].children[0].append_child(AbstractTreeItem())
+    root.children[-1].children[0].append_child(AbstractTreeItem())
     # root.dump()
     
     model = AbstractDndTreeModel(root)

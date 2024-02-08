@@ -46,7 +46,10 @@ class KeyValueTreeView(AbstractTreeView):
         return menu
     
     def askToDeleteItem(self, item: KeyValueTreeItem):
-        answer = QMessageBox.question(self, 'Delete', f'Delete {item.name_from_path()}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        itemPath = item.path
+        if len(itemPath) > 50:
+            itemPath = '...' + itemPath[-47:]
+        answer = QMessageBox.question(self, 'Delete', f'Delete {itemPath}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
         if answer == QMessageBox.StandardButton.Yes:
             model: KeyValueTreeModel = self.model()
             model.removeItem(item)
