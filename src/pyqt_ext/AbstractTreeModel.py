@@ -220,9 +220,9 @@ class AbstractTreeModel(QAbstractItemModel):
         dst_parent_item: AbstractTreeItem = self.itemFromIndex(dst_parent_index)
 
         self.beginMoveRows(src_parent_index, src_row, src_row, dst_parent_index, dst_row)
-        dst_parent_item.insert_child(dst_row, src_item)
+        success: bool = dst_parent_item.insert_child(dst_row, src_item)
         self.endMoveRows()
-        return True
+        return success
     
     # !!! reimplement for drag and drop
     def supportedDropActions(self) -> Qt.DropActions:

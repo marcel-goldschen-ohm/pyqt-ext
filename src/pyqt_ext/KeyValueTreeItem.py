@@ -62,7 +62,7 @@ class KeyValueTreeItem(AbstractTreeItem):
         if self.parent is parent:
             return
         if (parent is not None) and (not parent.is_container()):
-            raise ValueError('Parent must be a container type (dict or list).')
+            raise ValueError('Parent must be a container (dict or list).')
         if self.parent is not None:
             # detach from old parent
             if self in self.parent.children:
@@ -81,7 +81,7 @@ class KeyValueTreeItem(AbstractTreeItem):
                     parent.value[self.key] = self.value
                 elif parent.is_list():
                     key = parent.children.index(self)
-                    if key < len(parent._value):
+                    if key < len(parent.value):
                         parent.value[key] = self.value
                     else:
                         parent.value.append(self.value)
