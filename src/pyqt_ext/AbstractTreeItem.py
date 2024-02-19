@@ -19,7 +19,7 @@ class AbstractTreeItem():
     
     def __init__(self, parent: AbstractTreeItem | None = None):
         self._parent: AbstractTreeItem | None = None
-        self._children: list[AbstractTreeItem] = []
+        self.children: list[AbstractTreeItem] = []
        
         # handle linkage
         self.parent = parent
@@ -27,8 +27,7 @@ class AbstractTreeItem():
     def __repr__(self):
         # Return a single line string representation of this item.
         # See __str__ for a multi-line representation of the tree.
-        # raise NotImplementedError
-        return self.__class__.__name__ + ' at ' + str(id(self))  # for debugging
+        return self.__class__.__name__ + ' at ' + str(id(self))
     
     def __str__(self):
         # returns a multi-line string representation of this item's tree branch
@@ -50,6 +49,24 @@ class AbstractTreeItem():
                 parent = parent.parent
         return '\n'.join(lines)
     
+    def __getitem__(self, path: str) -> AbstractTreeItem:
+        """ Return item at path either from the root item (if path starts with /) or otherwise from this item. """
+        if path.startswith('/'):
+            # path from root item (first name in path must be a child of the root item)
+            item: AbstractTreeItem = self.root
+        else:
+            # path from this item (first name in path must be a child of this item)
+            item: AbstractTreeItem = self
+        path = path.strip('/').split('/')
+        for name in path:
+            try:
+                child_names = [child.name for child in item.children]
+                child_index = child_names.index(name)
+                item = item.children[child_index]
+            except:
+                return None
+        return item
+    
     @property
     def parent(self) -> AbstractTreeItem | None:
         return self._parent
@@ -69,8 +86,17 @@ class AbstractTreeItem():
         self._parent = parent
     
     @property
-    def children(self) -> list[AbstractTreeItem]:
-        return self._children
+    def name(self) -> str:
+        return str(repr(self))
+    
+    @property
+    def path(self) -> str:
+        item: AbstractTreeItem = self
+        path = []
+        while not item.is_root():
+            path.insert(0, item.name)
+            item = item.parent
+        return '/' + '/'.join(path)
     
     @property
     def root(self) -> AbstractTreeItem:
@@ -174,6 +200,8 @@ class AbstractTreeItem():
             return False
     
     def insert_child(self, index: int, child: AbstractTreeItem) -> bool:
+        if not (0 <= index <= len(self.children)):
+            return False
         try:
             child.parent = self
             # move item to index
@@ -200,8 +228,10 @@ class AbstractTreeItem():
         while item is not None:
             yield item
             item = item._next_depth_first()
+            if (item is not None) and not item.has_ancestor(self):
+                item = None
     
-    def depth_first_reversed(self) -> Iterator[AbstractTreeItem]:
+    def reverse_depth_first(self) -> Iterator[AbstractTreeItem]:
         item: AbstractTreeItem = self._last_depth_first()
         while item is not None:
             yield item

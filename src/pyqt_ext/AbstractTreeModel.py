@@ -67,7 +67,7 @@ class AbstractTreeModel(QAbstractItemModel):
         root: AbstractTreeItem = self.root()
         if root is None:
             return 0
-        return root.branch_max_depth() - 1
+        return root.branch_max_depth()
     
     def rowCount(self, parent_index: QModelIndex = QModelIndex()) -> int:
         if parent_index.column() > 0:
@@ -116,10 +116,13 @@ class AbstractTreeModel(QAbstractItemModel):
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlag:
         if not index.isValid():
+            # root item
+            flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
                 # allow drops on the root item (i.e., this allows drops on the viewport away from other items)
-                return Qt.ItemFlag.ItemIsDropEnabled
-            return Qt.ItemFlag.NoItemFlags
+                flags |= Qt.ItemFlag.ItemIsDropEnabled
+            # return Qt.ItemFlag.NoItemFlags
+            return flags
         flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
             flags |= Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
@@ -158,8 +161,7 @@ class AbstractTreeModel(QAbstractItemModel):
             if section < len(labels):
                 labels[section] = value
             else:
-                first = len(labels)
-                labels += [None] * (section - first) + [value]
+                labels += [None] * (section - len(labels)) + [value]
             if orientation == Qt.Orientation.Horizontal:
                 self.setColumnLabels(labels)
             elif orientation == Qt.Orientation.Vertical:
@@ -168,9 +170,15 @@ class AbstractTreeModel(QAbstractItemModel):
         return False
 
     def removeRows(self, row: int, count: int, parent_index: QModelIndex = QModelIndex()) -> bool:
-        parent_item: AbstractTreeItem = self.itemFromIndex(parent_index)
-        if row < 0 or row + count > len(parent_item.children):
+        if count <= 0:
             return False
+        n_rows: int = self.rowCount(parent_index)
+        if row < 0:
+            # negative indexing
+            row += n_rows
+        if (row < 0) or (row + count > n_rows):
+            return False
+        parent_item: AbstractTreeItem = self.itemFromIndex(parent_index)
         self.beginRemoveRows(parent_index, row, row + count - 1)
         for _ in range(count):
             item: AbstractTreeItem = parent_item.children[row]
@@ -183,17 +191,25 @@ class AbstractTreeModel(QAbstractItemModel):
         if parent_item is None:
             # cannot remove the root item
             return False
-        parent_index: QModelIndex = self.createIndex(parent_item.row(), 0, parent_item)
-        return self.removeRows(item.row(), 1, parent_index)
+        parent_row: int = parent_item.sibling_index
+        parent_index: QModelIndex = self.createIndex(parent_row, 0, parent_item)
+        item_row: int = item.sibling_index
+        return self.removeRows(item_row, 1, parent_index)
     
     # !!! not implemented
     def insertRows(self, row: int, count: int, parent_index: QModelIndex = QModelIndex()) -> bool:
         return False
     
     def insertItems(self, row: int, items: list[AbstractTreeItem], parent_index: QModelIndex = QModelIndex()) -> bool:
-        parent_item: AbstractTreeItem = self.itemFromIndex(parent_index)
-        if row < 0 or row > len(parent_item.children):
+        if not items:
             return False
+        n_rows: int = self.rowCount(parent_index)
+        if row < 0:
+            # negative indexing
+            row += n_rows
+        if (row < 0) or (row > n_rows):
+            return False
+        parent_item: AbstractTreeItem = self.itemFromIndex(parent_index)
         count: int = len(items)
         self.beginInsertRows(parent_index, row, row + count - 1)
         for i, item in enumerate(items):
@@ -202,17 +218,19 @@ class AbstractTreeModel(QAbstractItemModel):
         return True
     
     def moveRow(self, src_parent_index: QModelIndex, src_row: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
+        n_src_rows: int = self.rowCount(src_parent_index)
+        n_dst_rows: int = self.rowCount(dst_parent_index)
         if src_row < 0:
             # negative indexing
-            src_row += self.rowCount(src_parent_index)
+            src_row += n_src_rows
         if dst_row < 0:
             # negative indexing
-            dst_row += self.rowCount(dst_parent_index)
+            dst_row += n_dst_rows
         if (src_parent_index == dst_parent_index) and (src_row == dst_row):
             return False
-        if not (0 <= src_row < self.rowCount(src_parent_index)):
+        if not (0 <= src_row < n_src_rows):
             return False
-        if not (0 <= dst_row <= self.rowCount(dst_parent_index)):
+        if not (0 <= dst_row <= n_dst_rows):
             return False
 
         src_parent_item: AbstractTreeItem = self.itemFromIndex(src_parent_index)

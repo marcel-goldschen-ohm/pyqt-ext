@@ -54,6 +54,14 @@ class AbstractTreeView(QTreeView):
         QTreeView.selectionChanged(self, selected, deselected)
         self.selectionWasChanged.emit()
 
+    def selectedItems(self) -> list[AbstractTreeItem]:
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            return []
+        indexes: list[QModelIndex] = self.selectionModel().selectedIndexes()
+        items: list[AbstractTreeItem] = [model.itemFromIndex(index) for index in indexes]
+        return items
+    
     @Slot(QPoint)
     def onCustomContextMenuRequested(self, point: QPoint):
         index: QModelIndex = self.indexAt(point)
@@ -74,9 +82,11 @@ class AbstractTreeView(QTreeView):
     
     def expandAll(self):
         QTreeView.expandAll(self)
-        model: AbstractTreeModel = self.model()
-        if model is not None:
-            self._depth = model.maxDepth()
+        try:
+            model: AbstractTreeModel = self.model()
+            self._depth = model.maxDepth() - 1
+        except:
+            pass
     
     def collapseAll(self):
         QTreeView.collapseAll(self)
@@ -85,7 +95,7 @@ class AbstractTreeView(QTreeView):
     def expandToDepth(self, depth: int):
         model: AbstractTreeModel = self.model()
         if model is not None:
-            depth = max(0, min(depth, model.maxDepth()))
+            depth = max(0, min(depth, model.maxDepth() - 1))
             if depth == 0:
                 self.collapseAll()
                 return
@@ -187,6 +197,47 @@ class AbstractTreeView(QTreeView):
     # def canDropMimeData(self, data: QMimeData, action: Qt.DropAction, row: int, column: int, parent: QModelIndex) -> bool:
     #     print('canDropMimeData')
     #     return True
+    
+    def storeState(self):
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            return
+        if not hasattr(self, '_state'):
+            self._state = {}
+        selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
+        for item in model.root().depth_first():
+            if item is model.root():
+                continue
+            index: QModelIndex = model.createIndex(item.sibling_index, 0, item)
+            path = item.path
+            self._state[path] = {
+                'expanded': self.isExpanded(index),
+                'selected': index in selected
+            }
+
+    def restoreState(self):
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            return
+        if not hasattr(self, '_state'):
+            self._state = {}
+        self.selectionModel().clearSelection()
+        selection: QItemSelection = QItemSelection()
+        for item in model.root().depth_first():
+            if item is model.root():
+                continue
+            index: QModelIndex = model.createIndex(item.sibling_index, 0, item)
+            path = item.path
+            if path in self._state:
+                isExpanded = self._state[path].get('expanded', False)
+                self.setExpanded(index, isExpanded)
+                isSelected = self._state[path].get('selected', False)
+                if isSelected:
+                    selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+            else:
+                self.setExpanded(index, False)
+        if selection.count():
+            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
 
 
 def test_live():
@@ -207,6 +258,7 @@ def test_live():
     
     model = AbstractDndTreeModel(root)
     view = AbstractTreeView()
+    # view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
     view.setModel(model)
     view.show()
     view.resize(QSize(600, 600))
