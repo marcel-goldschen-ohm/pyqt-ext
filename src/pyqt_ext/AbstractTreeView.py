@@ -49,6 +49,11 @@ class AbstractTreeView(QTreeView):
         else:
             self.setDragDropMode(QAbstractItemView.DragDropMode.NoDragDrop)
     
+    def resetModel(self):
+        self.storeState()
+        self.model().setRoot(self.model().root())
+        self.restoreState()
+    
     @Slot(QItemSelection, QItemSelection)
     def selectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
         QTreeView.selectionChanged(self, selected, deselected)

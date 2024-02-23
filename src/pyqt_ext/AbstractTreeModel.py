@@ -139,6 +139,8 @@ class AbstractTreeModel(QAbstractItemModel):
         item: AbstractTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.EditRole:
             success: bool = item.set_data(index.column(), value)
+            if success:
+                self.dataChanged.emit(index, index)
             return success
         return False
 
@@ -166,6 +168,7 @@ class AbstractTreeModel(QAbstractItemModel):
                 self.setColumnLabels(labels)
             elif orientation == Qt.Orientation.Vertical:
                 self.setRowLabels(labels)
+            self.headerDataChanged.emit(orientation, section, section)
             return True
         return False
 

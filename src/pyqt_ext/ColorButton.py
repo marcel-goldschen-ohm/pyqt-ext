@@ -4,6 +4,7 @@
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
+import qtawesome as qta
 from pyqt_ext import ColorType, toQColor
 
 
@@ -14,7 +15,7 @@ class ColorButton(QToolButton):
 
     colorChanged = Signal(QColor)
     
-    def __init__(self, color = QColor('transparent')):
+    def __init__(self, color = None):
         QToolButton.__init__(self)
         self.setColor(color)
         self.clicked.connect(self.pickColor)
@@ -23,8 +24,15 @@ class ColorButton(QToolButton):
         return self._color
 
     def setColor(self, color: ColorType):
+        if color is None:
+            color: QColor = QColor('transparent')
+            self.setStyleSheet(f'background-color: rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()}); border: 1px solid black;')
+            self.setIcon(qta.icon('ri.question-mark'))
+            self._color = None
+            return
         color: QColor = toQColor(color)
         self.setStyleSheet(f'background-color: rgba({color.red()}, {color.green()}, {color.blue()}, {color.alpha()}); border: 1px solid black;')
+        self.setIcon(QIcon())
         self._color = color
         self.colorChanged.emit(color)
     
@@ -36,7 +44,9 @@ class ColorButton(QToolButton):
 
 def test_live():
     app = QApplication()
-    ui = ColorButton("magenta")
+    ui = ColorButton()
+    ui.setColor("magenta")
+    ui.setColor(None)
     ui.show()
     app.exec()
 
