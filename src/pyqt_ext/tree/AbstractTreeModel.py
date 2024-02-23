@@ -5,7 +5,7 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_ext import AbstractTreeItem
+from pyqt_ext.tree import AbstractTreeItem
 
 
 class AbstractTreeModel(QAbstractItemModel):

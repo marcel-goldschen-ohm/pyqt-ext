@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from pyqt_ext import AbstractTreeItem
+from pyqt_ext.tree import AbstractTreeItem
 
 
 class KeyValueTreeItem(AbstractTreeItem):

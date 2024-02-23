@@ -1,13 +1,13 @@
 # pyqt-ext
 Collection of PyQt/PySide widgets/tools.
 
-:construction:
-
-- [Abstract Tree Model/View](https://github.com/marcel-goldschen-ohm/PyQt-ext/docs/AbstractTree.md)
-- [(Key,Value) Tree Model/View](https://github.com/marcel-goldschen-ohm/PyQt-ext/docs/KeyValueTree.md)
-- [Color Tools](https://github.com/marcel-goldschen-ohm/PyQt-ext/docs/Color.md)
-- [Chart Data Style](https://github.com/marcel-goldschen-ohm/PyQt-ext/docs/ChartDataStyle.md)
-- [Multi-Value SpinBox](https://github.com/marcel-goldschen-ohm/PyQt-ext/docs/MultiValueSpinBox.md)
+- Tree model/view
+    - [Abstract tree interface](https://github.com/marcel-goldschen-ohm/pyqt-ext/docs/AbstractTree.md)
+    - [(key, value) tree](https://github.com/marcel-goldschen-ohm/pyqt-ext/docs/KeyValueTree.md)
+- Color
+    - [Color utils](https://github.com/marcel-goldschen-ohm/pyqt-ext/docs/Color.md)
+    - [Color selection button](https://github.com/marcel-goldschen-ohm/pyqt-ext/docs/ColorButton.md)
+- [Multi-value spinbox](https://github.com/marcel-goldschen-ohm/pyqt-ext/docs/MultiValueSpinBox.md)
 
 # Install
 Should work with PySide6, PyQt6, or PyQt5.

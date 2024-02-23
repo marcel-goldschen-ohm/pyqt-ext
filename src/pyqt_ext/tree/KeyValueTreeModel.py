@@ -5,7 +5,7 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_ext import AbstractTreeModel, KeyValueTreeItem
+from pyqt_ext.tree import AbstractTreeModel, KeyValueTreeItem
 import qtawesome as qta
 
 

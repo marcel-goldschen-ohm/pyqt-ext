@@ -5,7 +5,7 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_ext import AbstractTreeItem, AbstractTreeModel
+from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel
 
 
 class AbstractTreeView(QTreeView):
@@ -246,7 +246,7 @@ class AbstractTreeView(QTreeView):
 
 
 def test_live():
-    from pyqt_ext.AbstractTreeModel import AbstractDndTreeModel
+    from pyqt_ext.tree.AbstractTreeModel import AbstractDndTreeModel
 
     app = QApplication()
 
