@@ -38,8 +38,7 @@ class CustomTreeItem(AbstractTreeItem):
         AbstractTreeItem.__init__(self, name, parent)
     
     def __repr__(self):
-        # return 'name: data'
-        return AbstractTreeItem.__repr__(self) + f': {self.data}'
+        return f'{self.name}: {self.data}'
     
     # For an editable tree with two columns: name, data...
 
