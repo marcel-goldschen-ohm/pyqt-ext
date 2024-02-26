@@ -3,7 +3,7 @@ Collection of PyQt/PySide widgets/tools.
 
 - `tree/`
     - [Tree model/view interface](docs/AbstractTree.md)
-    - 🚧 (key, value) tree model/view
+    - [(key, value) tree model/view](docs/KeyValueTree.md)
 - `utils/`
     - 🚧 Color utils
 - `widgets/`
