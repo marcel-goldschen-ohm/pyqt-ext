@@ -161,4 +161,6 @@ Run the application...
 app.exec()
 ```
 
-![](https://github.com/marcel-goldschen-ohm/pyqt-ext/examples/images/CustomTreeExample.png)
+And voila!
+
+<img src="images/CustomTreeExample.png">
