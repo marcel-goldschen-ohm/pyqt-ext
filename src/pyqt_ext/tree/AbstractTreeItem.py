@@ -18,6 +18,11 @@ class AbstractTreeItem():
     """
     
     def __init__(self, name: str | None = None, parent: AbstractTreeItem | None = None):
+        # ensure properties are defined
+        self._name: str | None = None
+        self._parent: AbstractTreeItem | None = None
+
+        # init properties
         self.name: str | None = name
         self.parent: AbstractTreeItem | None = parent
         self.children: list[AbstractTreeItem] = []
@@ -71,8 +76,6 @@ class AbstractTreeItem():
     
     @parent.setter
     def parent(self, parent: AbstractTreeItem | None) -> None:
-        if not hasattr(self, '_parent'):
-            self._parent = None
         if self.parent is parent:
             return
         if parent.has_ancestor(self):

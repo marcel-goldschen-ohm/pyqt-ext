@@ -43,7 +43,7 @@ class KeyValueTreeModel(AbstractTreeModel):
         if item is None:
             return
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
-            return item.data(index.column())
+            return item.get_data(index.column())
         elif role == Qt.ItemDataRole.DecorationRole:
             if index.column() == 0:
                 if item.is_dict():
@@ -52,20 +52,13 @@ class KeyValueTreeModel(AbstractTreeModel):
                     return qta.icon('ph.list-numbers-thin')
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
-        if role != Qt.ItemDataRole.EditRole:
+        if not index.isValid():
             return False
         item: KeyValueTreeItem = self.itemFromIndex(index)
         if item is None:
             return False
         if role == Qt.ItemDataRole.EditRole:
-            if index.column() == 0:
-                item.key = value
-                return True
-            elif index.column() == 1:
-                if item.is_container():
-                    return False
-                item.value = value
-                return True
+            return item.set_data(index.column(), value)
         return False
 
 

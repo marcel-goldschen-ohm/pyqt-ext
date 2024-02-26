@@ -7,8 +7,8 @@ from pyqt_ext.tree import AbstractTreeItem
 
 class KeyValueTreeItem(AbstractTreeItem):
     
-    def __init__(self, key, value, parent: KeyValueTreeItem | None = None) -> None:
-        self._key = key
+    def __init__(self, key: str | None, value, parent: KeyValueTreeItem | None = None) -> None:
+        self._key: str | None = key
         self._value = value
         AbstractTreeItem.__init__(self, parent=parent)
 
@@ -27,26 +27,33 @@ class KeyValueTreeItem(AbstractTreeItem):
         return f'{self.key}: {self.value}'
     
     @property
-    def key(self):
+    def key(self) -> str | int:
+        # if parent is a list, the key is the index of this item in the list
         if self.parent is not None:
             if self.parent.is_list():
-                # if parent is a list, the key is the index of this item in the list
                 return self.sibling_index
+        # otherwise, return the local key
         return self._key
     
     @key.setter
-    def key(self, key) -> None:
+    def key(self, key: str) -> None:
+        # update parent dict
         if self.parent is not None:
             if self.parent.is_dict():
+                # only allow string keys for dict
                 key = str(key)
+                # remove old key from parent dict
                 if (self.key is not None) and (self.key in self.parent.value):
                     self.parent.value.pop(self.key)
+                # make sure key is unique
                 if key in self.parent.value:
                     key = unique_name(key, list(self.parent.value.keys()))
+                # add new key to parent dict
                 self.parent.value[key] = self.value
-            elif self.parent.isList():
+            elif self.parent.is_list():
                 # cannot edit list index
                 return
+        # update local key
         self._key = key
     
     @property
@@ -55,9 +62,11 @@ class KeyValueTreeItem(AbstractTreeItem):
     
     @value.setter
     def value(self, value) -> None:
+        # update parent dict or list
         if self.parent is not None:
             if self.parent.is_dict() or self.parent.is_list():
                 self.parent.value[self.key] = value
+        # update local value
         self._value = value
     
     @AbstractTreeItem.parent.setter
@@ -67,10 +76,12 @@ class KeyValueTreeItem(AbstractTreeItem):
         if (parent is not None) and (not parent.is_container()):
             raise ValueError('Parent must be a container (dict or list).')
         old_parent: KeyValueTreeItem | None = self.parent
+
+        # update item tree
         AbstractTreeItem.parent.fset(self, parent)
-        # move (key,value) pair from old parent container to new parent container
+
+        # remove value from old parent container
         if old_parent is not None:
-            # remove value from old parent container
             if old_parent.is_dict():
                 for key, value in old_parent.value.items():
                     if (value is self.value) or (value == self.value):
@@ -79,15 +90,16 @@ class KeyValueTreeItem(AbstractTreeItem):
             elif old_parent.is_list():
                 if self.value in old_parent.value:
                     old_parent.value.remove(self.value)
+        # insert value into new parent container
         if parent is not None:
-            # insert value into new parent container
             if parent.is_dict():
                 if self.value not in parent.value.values():
-                    key = str(self.key)
-                    if key in parent.value:
-                        key = unique_name(key, list(parent.value.keys()))
-                    self._key = key
-                    parent.value[self.key] = self.value
+                    # resetting key will insert value into parent dict
+                    self.key = str(self.key)
+                    # if key in parent.value:
+                    #     key = unique_name(key, list(parent.value.keys()))
+                    # self._key = key
+                    # parent.value[self.key] = self.value
             elif parent.is_list():
                 if self.value not in parent.value:
                     parent.value.append(self.value)
@@ -114,7 +126,7 @@ class KeyValueTreeItem(AbstractTreeItem):
                 self.value.insert(index, self.value.pop(pos))
         return True
     
-    def data(self, column: int):
+    def get_data(self, column: int):
         if column == 0:
             return self.key
         elif column == 1:
