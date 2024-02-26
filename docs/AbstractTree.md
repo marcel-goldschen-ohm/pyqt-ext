@@ -124,7 +124,7 @@ root = model.root()
 model.setRoot(root)
 ```
 
-Create the tree view widget as instance of [AbstractTreeView](#abstracttreeview) (no need to define a derived tree view class unless custom behavior is needed)...
+Create the tree view widget as instance of [AbstractTreeView](#abstracttreeview) *(no need to define a derived tree view class unless custom behavior is needed)*...
 ```python
 from pyqt_ext.tree import AbstractTreeView
 
