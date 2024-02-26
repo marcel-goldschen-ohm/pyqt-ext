@@ -6,7 +6,7 @@ Qt tree model/view classes require a large amount of boilerplate code that is of
 - [Quick start example](#quick-start-example): Example of a simple custom tree model/view.
 - [AbstractTreeItem](#abstracttreeitem): Generic tree node with parent/child linkage, navigation, path access, iteration, etc. *Only missing the data you want to associate with it.*
 - [AbstractTreeModel](#abstracttreemodel): Tree model that knows how to work with `AbstractTreeItem`s.
-- [AbstractDndTreeModel](#abstractdndtreemodel): Tree model with default drag and drop functionality.
+- [AbstractDndTreeModel](#abstractdndtreemodel): Tree model with default drag-and-drop functionality.
 - [AbstractTreeView](#abstracttreeview): Tree view widget with context menu and Ctrl+Wheel expand/fold.
 
 # Install
@@ -96,7 +96,7 @@ grandchild2: False
 greatgrandchild: None
 ```
 
-Custom tree model with drag and drop derived from [AbstractDndTreeModel](#abstractdndtreemodel) for an editable tree with two columns: name, data...
+Custom tree model with drag-and-drop derived from [AbstractDndTreeModel](#abstractdndtreemodel) for an editable tree with two columns: name, data...
 ```python
 from pyqt_ext.tree import AbstractDndTreeModel
 # should work with PySide6, PyQt6, or PyQt5
@@ -158,9 +158,9 @@ Source code: [AbstractTreeModel.py](../src/pyqt_ext/tree/AbstractTreeModel.py)
 # AbstractDndTreeModel
 Source code: [AbstractTreeModel.py](../src/pyqt_ext/tree/AbstractTreeModel.py)
 
-Same as `AbstractTreeModel` except that drag and drop is enabled (`supportedDropActions` allows `MoveAction` and `CopyAction` by default). The rest of what is needed to support drag and drop is already in `AbstractTreeModel` (e.g., see `flags`), it is simply ignored until drag and drop actions are specifically supported. To customize drag and drop behaviour, you can reimplement `flags` and/or `moveRows`. Another place you can customize drag and drop behavior is by reimplementing `dragEnterEvent` and/or `dropEvent` in `AbstractTreeView`. *!!! Currently, `AbstractTreeView` does not handle mime data, so the out-of-the-box drag and drop only handles moving items within a tree.*
+Same as `AbstractTreeModel` except that drag-and-drop is enabled (`supportedDropActions` allows `MoveAction` and `CopyAction` by default). The rest of what is needed to support drag-and-drop is already in `AbstractTreeModel` (e.g., see `flags`), it is simply ignored until drag-and-drop actions are specifically supported. To customize drag-and-drop behaviour, you can reimplement `flags` and/or `moveRows`. Another place you can customize drag-and-drop behavior is by reimplementing `dragEnterEvent` and/or `dropEvent` in `AbstractTreeView`. *!!! Currently, `AbstractTreeView` does not handle mime data, so the out-of-the-box drag-and-drop only handles moving items within a tree.*
 
 # AbstractTreeView
 Source code: [AbstractTreeView.py](../src/pyqt_ext/tree/AbstractTreeView.py)
 
-`AbstractTreeView` provides a `QTreeView` with a context menu and Ctrl+Wheel expanding/folding of the tree branches. The view is functional out-of-the-box. It also supports drag and drop (the model will also need to support drag and drop). *!!! Currently, `AbstractTreeView` does not handle mime data, so the out-of-the-box drag and drop only handles moving items within a tree.*
+`AbstractTreeView` provides a `QTreeView` with a context menu and Ctrl+Wheel expanding/folding of the tree branches. The view is functional out-of-the-box. It also supports drag-and-drop (the model will also need to support drag-and-drop). *!!! Currently, `AbstractTreeView` does not handle mime data, so the out-of-the-box drag-and-drop only handles moving items within a tree.*
