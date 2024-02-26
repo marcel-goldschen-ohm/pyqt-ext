@@ -1,0 +1,1 @@
+from pyqt_ext.utils.Color import ColorType, toQColor, toColorStr

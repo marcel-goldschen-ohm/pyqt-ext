@@ -133,7 +133,7 @@ class AbstractTreeModel(QAbstractItemModel):
             return
         item: AbstractTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
-            return item.data(index.column())
+            return item.get_data(index.column())
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
         item: AbstractTreeItem = self.itemFromIndex(index)

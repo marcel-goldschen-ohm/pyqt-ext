@@ -12,22 +12,20 @@ class AbstractTreeItem():
 
     In a derived class:
         1. Add attributes to store/interface with your data.
-        2. Minimally reimplement data() and set_data() methods.
-        3. For nice printout, you may want to reimplement __repr__() method.
-        3. For special linkage rules you may need to reimplement parent.setter and insert_child().
+        2. Minimally reimplement `get_data` and `set_data` methods.
+        3. For nice printout, you may want to reimplement `__repr__`.
+        3. For special linkage rules you may need to reimplement `parent.setter` and `insert_child`.
     """
     
-    def __init__(self, parent: AbstractTreeItem | None = None):
-        self._parent: AbstractTreeItem | None = None
+    def __init__(self, name: str | None = None, parent: AbstractTreeItem | None = None):
+        self.name: str | None = name
+        self.parent: AbstractTreeItem | None = parent
         self.children: list[AbstractTreeItem] = []
-       
-        # handle linkage
-        self.parent = parent
     
     def __repr__(self):
         # Return a single line string representation of this item.
         # See __str__ for a multi-line representation of the tree.
-        return self.__class__.__name__ + ' at ' + str(id(self))
+        return self.name
     
     def __str__(self):
         # returns a multi-line string representation of this item's tree branch
@@ -73,8 +71,12 @@ class AbstractTreeItem():
     
     @parent.setter
     def parent(self, parent: AbstractTreeItem | None) -> None:
+        if not hasattr(self, '_parent'):
+            self._parent = None
         if self.parent is parent:
             return
+        if parent.has_ancestor(self):
+            raise ValueError('Cannot set parent to a descendant.')
         if self.parent is not None:
             # detach from old parent
             if self in self.parent.children:
@@ -87,7 +89,13 @@ class AbstractTreeItem():
     
     @property
     def name(self) -> str:
-        return str(repr(self))
+        if self._name is None:
+            return self.__class__.__name__ + '@' + str(id(self))
+        return self._name
+    
+    @name.setter
+    def name(self, name: str) -> None:
+        self._name = name
     
     @property
     def path(self) -> str:
@@ -267,7 +275,7 @@ class AbstractTreeItem():
 
     # interface for QAbstractItemModel ----------------------------------------
     
-    def data(self, column: int):
+    def get_data(self, column: int):
         # raise NotImplementedError
         return repr(self)  # for debugging
     
@@ -278,15 +286,18 @@ class AbstractTreeItem():
 
 def test_tree():
     root = AbstractTreeItem()
-    root.append_child(AbstractTreeItem())
-    root.append_child(AbstractTreeItem())
-    root.append_child(AbstractTreeItem())
-    root.children[-1].append_child(AbstractTreeItem())
-    root.children[-1].append_child(AbstractTreeItem())
-    root.children[-1].append_child(AbstractTreeItem())
-    root.children[-1].children[0].append_child(AbstractTreeItem())
-    root.children[-1].children[0].append_child(AbstractTreeItem())
+    AbstractTreeItem(parent=root)
+    root.append_child(AbstractTreeItem(name='child2'))
+    root.insert_child(1, AbstractTreeItem(name='child3'))
+    root.children[1].append_child(AbstractTreeItem())
+    grandchild2 = AbstractTreeItem(name='grandchild2')
+    grandchild2.parent = root['child2']
+    AbstractTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
     print(root)
+
+    print('Depth first iteration...')
+    for item in root.depth_first():
+        print(item.name)
 
 
 if __name__ == '__main__':

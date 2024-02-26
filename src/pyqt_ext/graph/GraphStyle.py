@@ -7,7 +7,8 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_ext import ColorType, toQColor, toColorStr, ColorButton
+from pyqt_ext.color import ColorType, toQColor, toColorStr
+from pyqt_ext.widgets import ColorButton
 
 
 class GraphStyle(dict):
@@ -31,18 +32,91 @@ class GraphStyle(dict):
         # Qt.PenStyle.DashLine = 2
         # Qt.PenStyle.DotLine = 3
         # Qt.PenStyle.DashDotLine = 4
-        self.penStyles = [Qt.PenStyle.NoPen, Qt.PenStyle.SolidLine, Qt.PenStyle.DashLine, Qt.PenStyle.DotLine, Qt.PenStyle.DashDotLine]
-        self.lineStyles = ['none', '-', '--', ':', '-.']
+        self._penstyles = [Qt.PenStyle.NoPen, Qt.PenStyle.SolidLine, Qt.PenStyle.DashLine, Qt.PenStyle.DotLine, Qt.PenStyle.DashDotLine]
+        self._linestyles = ['none', '-', '--', ':', '-.']
 
         # Default markers supported by pyqtgraph.
         # Change these to whatever you want.
-        self.markers = ['none', 'o', 't', 't1', 't2', 't3', 's', 'p', 'h', 'star', '+', 'd', 'x']
+        self._markers = ['none', 'o', 't', 't1', 't2', 't3', 's', 'p', 'h', 'star', '+', 'd', 'x']
 
         # Special color names
         self._special_colors: dict[str, QColor] = {
             'none': QColor('transparent'),
             'auto': QColor('transparent'),
         }
+
+        # alternate key names
+        self._keymap = {
+            'c': 'color',
+            'ls': 'linestyle',
+            'lw': 'linewidth',
+            'symbol': 'marker',
+            'm': 'marker',
+            'ms': 'markersize',
+            'mew': 'markeredgewidth',
+            'mec': 'markeredgecolor',
+            'mfc': 'markerfacecolor',
+        }
+
+        # default values
+        self._defaults = {
+            'color': 'auto',
+            'linestyle': '-',
+            'linewidth': 1,
+            'marker': 'none',
+            'markersize': 10,
+            'markeredgewidth': 1,
+            'markeredgecolor': 'auto',
+            'markerfacecolor': 'auto',
+        }
+    
+    def __getitem__(self, key: str):
+        key = key.lower()
+        if key in self._keymap:
+            key = self._keymap[key]
+        if key in self:
+            return dict.__getitem__(self, key)
+        if key == 'markeredgewidth':
+            if 'linewidth' in self:
+                return self['linewidth']
+        elif key == 'markeredgecolor':
+            if 'color' in self:
+                return self['color']
+        elif key == 'markerfacecolor':
+            if 'markeredgecolor' in self:
+                return self['markeredgecolor']
+            elif 'color' in self:
+                return self['color']
+        elif key == 'qcolor':
+            pass
+        if key in self._defaults:
+            return self._defaults[key]
+    
+    def __setitem__(self, key: str, value):
+        key = key.lower()
+        if key in self._keymap:
+            key = self._keymap[key]
+        if key.endswith('color'):
+            value = toColorStr(value)
+        elif key == 'linestyle':
+            if value is None:
+                value = 'none'
+            elif isinstance(value, int):
+                value = self._linestyles[value]
+            elif isinstance(value, Qt.PenStyle):
+                index = self._penstyles.index(value)
+                value = self._linestyles[index]
+        elif key == 'marker':
+            if value is None:
+                value = 'none'
+        dict.__setitem__(self, key, value)
+    
+    def __delitem__(self, key: str):
+        key = key.lower()
+        if key in self._keymap:
+            key = self._keymap[key]
+        if key in self:
+            dict.__delitem__(self, key)
     
     def color(self) -> str:
         return self.get('Color', 'auto')
@@ -60,14 +134,14 @@ class GraphStyle(dict):
         if value is None:
             value = 'none'
         elif isinstance(value, int):
-            value = self.lineStyles[value]
+            value = self._linestyles[value]
         elif isinstance(value, Qt.PenStyle):
-            index = self.penStyles.index(value)
-            value = self.lineStyles[index]
+            index = self._penstyles.index(value)
+            value = self._linestyles[index]
         self['LineStyle'] = value
     
     def lineQtPenStyle(self) -> Qt.PenStyle:
-        return Qt.PenStyle(self.lineStyles.index(self.lineStyle()))
+        return Qt.PenStyle(self._linestyles.index(self.lineStyle()))
     
     def lineWidth(self) -> float:
         return self.get('LineWidth', 1)
