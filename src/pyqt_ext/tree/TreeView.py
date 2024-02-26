@@ -8,7 +8,7 @@ from qtpy.QtWidgets import *
 from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel
 
 
-class AbstractTreeView(QTreeView):
+class TreeView(QTreeView):
     """ Base class for a tree view with context menu and mouse wheel expand/collapse.
     """
 
@@ -246,7 +246,7 @@ class AbstractTreeView(QTreeView):
 
 
 def test_live():
-    from pyqt_ext.tree.AbstractTreeModel import AbstractDndTreeModel
+    from pyqt_ext.tree import AbstractDndTreeModel
 
     app = QApplication()
 
@@ -262,7 +262,7 @@ def test_live():
     # root.dump()
     
     model = AbstractDndTreeModel(root)
-    view = AbstractTreeView()
+    view = TreeView()
     # view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
     view.setModel(model)
     view.show()

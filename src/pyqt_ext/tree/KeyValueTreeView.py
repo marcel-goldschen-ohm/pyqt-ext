@@ -5,13 +5,13 @@ from __future__ import annotations
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_ext.tree import AbstractTreeView, KeyValueTreeItem, KeyValueTreeModel
+from pyqt_ext.tree import TreeView, KeyValueTreeItem, KeyValueTreeModel
 
 
-class KeyValueTreeView(AbstractTreeView):
+class KeyValueTreeView(TreeView):
 
     def __init__(self, parent: QObject = None) -> None:
-        AbstractTreeView.__init__(self, parent)
+        TreeView.__init__(self, parent)
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
         menu: QMenu = AbstractTreeView.contextMenu(self, index)
@@ -56,7 +56,7 @@ class KeyValueTreeView(AbstractTreeView):
 
 
 def test_live():
-    from pyqt_ext import KeyValueDndTreeModel
+    from pyqt_ext.tree import KeyValueDndTreeModel
     
     app = QApplication()
 

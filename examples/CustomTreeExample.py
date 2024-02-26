@@ -1,7 +1,7 @@
 from __future__ import annotations
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QModelIndex
-from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel, AbstractDndTreeModel, AbstractTreeView
+from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel, AbstractDndTreeModel, TreeView
 
 
 class CustomTreeItem(AbstractTreeItem):
@@ -80,7 +80,7 @@ def customTreeExample():
     #model.setRoot(root)
 
     # Tree view widget with default behavior...
-    view = AbstractTreeView()
+    view = TreeView()
     view.setModel(model)
     view.expandAll()
     view.resizeAllColumnsToContents()
