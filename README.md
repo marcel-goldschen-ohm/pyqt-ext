@@ -3,12 +3,12 @@ Collection of PyQt/PySide widgets/tools.
 
 - `tree/`
     - [Tree model/view interface](docs/AbstractTree.md)
-    - [(key, value) tree model/view](docs/KeyValueTree.md)
+    - 🚧 (key, value) tree model/view
 - `utils/`
-    - [Color utils](docs/Color.md)
+    - 🚧 Color utils
 - `widgets/`
-    - [Color selection button](docs/ColorButton.md)
-    - [Multi-value spinbox](docs/MultiValueSpinBox.md)
+    - 🚧 Color selection button
+    - 🚧 Multi-value spinbox
 
 # Install
 Should work with PySide6, PyQt6, or PyQt5.
