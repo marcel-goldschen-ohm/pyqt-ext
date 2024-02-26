@@ -58,7 +58,7 @@ class CustomTreeItem(AbstractTreeItem):
         return False
 ```
 
-Build the tree...
+Build the tree *(I used a variety of methods just to give you a flavor of some of the capabilities of AbstractTreeItem)*...
 ```python
 root = CustomTreeItem()
 CustomTreeItem(data=82, parent=root)
