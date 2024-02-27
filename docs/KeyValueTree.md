@@ -1,5 +1,5 @@
 # Key-Value tree model/view interface for PyQt
-Model/View implementation of a tree of (key, value) pairs that builds off of the [abstract tree model/view interface](AbstractTree.md).
+Model/View implementation of a tree of (key, value) pairs that builds off of [abstract tree model/view interface](AbstractTree.md).
 
 # Table of contents
 - [Install](#install)
@@ -43,7 +43,7 @@ data = {
     },
 }
 
-root = KeyValueTreeItem('/', data)
+root = KeyValueTreeItem(key='/', value=data)
 print(root)
 ```
 ```shell
