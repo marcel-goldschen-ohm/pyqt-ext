@@ -65,7 +65,7 @@ print(root)
         └── g: 5
 ```
 
-Create the tree model...
+Create the tree model (with drag-and-drop)...
 ```python
 from pyqt_ext.tree import KeyValueDndTreeModel
 
@@ -88,7 +88,7 @@ Run the application...
 app.exec()
 ```
 
-And voila! Try editing the data, using the context menu to insert/delete items, and dragging the items to rearrange the tree...
+And voila! Try editing the data, using the context menu to insert/delete items, and dragging the items to rearrange the tree (note that this will also rearrange the mapped JSON-serializable data)...
 
 <img src="images/KeyValueTreeExample.png">
 
