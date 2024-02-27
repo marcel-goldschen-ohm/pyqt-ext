@@ -7,7 +7,7 @@ In addition to being useful out-of-the-box, you may find these tools to be usefu
     - [Tree model/view interface](docs/AbstractTree.md)
     - [(key, value) tree model/view](docs/KeyValueTree.md)
 - `utils/`
-    - 🚧 Color utils
+    - 🚧 [Color utils](docs/ColorUtils.md)
 - `widgets/`
     - 🚧 Color selection button
     - 🚧 Multi-value spinbox

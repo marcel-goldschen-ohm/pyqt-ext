@@ -1,9 +1,7 @@
 """ PySide/PyQt button for selecting and displaying a color.
 """
 
-from qtpy.QtCore import *
-from qtpy.QtGui import *
-from qtpy.QtWidgets import *
+from qtpy.QtGui import QColor
 
 
 ColorType = str | tuple[int | float] | list[int | float] | QColor
