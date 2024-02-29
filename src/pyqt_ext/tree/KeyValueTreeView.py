@@ -14,7 +14,7 @@ class KeyValueTreeView(TreeView):
         TreeView.__init__(self, parent)
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
-        menu: QMenu = AbstractTreeView.contextMenu(self, index)
+        menu: QMenu = TreeView.contextMenu(self, index)
        
         model: KeyValueTreeModel = self.model()
         if not index.isValid():
@@ -25,8 +25,8 @@ class KeyValueTreeView(TreeView):
         
         item: KeyValueTreeItem = model.itemFromIndex(index)
         menu.addSeparator()
-        menu.addMenu(self._insertMenu(parentIndex=model.parent(index), row=item.row(), title='Insert before'))
-        menu.addMenu(self._insertMenu(parentIndex=model.parent(index), row=item.row() + 1, title='Insert after'))
+        menu.addMenu(self._insertMenu(parentIndex=model.parent(index), row=item.sibling_index, title='Insert before'))
+        menu.addMenu(self._insertMenu(parentIndex=model.parent(index), row=item.sibling_index + 1, title='Insert after'))
         if item.is_container():
             menu.addMenu(self._insertMenu(parentIndex=index, row=len(item.children), title='Append child'))
         
