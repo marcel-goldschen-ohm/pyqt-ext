@@ -1,4 +1,4 @@
-""" Base class for a tree of items to be used as a data interface with QAbstractItemModel.
+""" Base class for a tree of items to be used as a data interface with AbstractTreeModel(QAbstractItemModel).
 """
 
 from __future__ import annotations
@@ -6,15 +6,26 @@ from collections.abc import Iterator
 
 
 class AbstractTreeItem():
-    """ Base class for a tree of items to be used as a data interface with QAbstractItemModel.
+    """ Base class for a tree of items to be used as a data interface with AbstractTreeModel(QAbstractItemModel).
     
-    !!! This only implements the tree structure. You must define any data variables in a derived class.
+    !!! This only implements the tree structure.
+        You must define any data variables in a derived class.
+    
+    What you get out-of-the-box:
+        - A host of methods for navigating and manipulating the tree structure:
+            - Parent/child linkage.
+            - Host of other linkage properties: siblings, first/last child, first/last sibling, etc.
+            - Path-based item access based on item names.
+            - Depth-first iteration.
+            - String representation of the tree.
+            - And more...
+        - An interface that is designed to work with AbstractTreeModel (i.e., QAbstractItemModel).
 
     In a derived class:
         1. Add attributes to store/interface with your data.
-        2. Minimally reimplement `get_data` and `set_data` methods.
+        2. Minimally reimplement `get_data` and `set_data` methods (used by AbstractTreeModel).
         3. For nice printout, you may want to reimplement `__repr__`.
-        3. For special linkage rules you may need to reimplement `parent.setter` and `insert_child`.
+        4. For special linkage rules you may need to reimplement `parent.setter` and `insert_child`.
     """
     
     def __init__(self, name: str | None = None, parent: AbstractTreeItem | None = None):
@@ -22,7 +33,7 @@ class AbstractTreeItem():
         self._name: str | None = None
         self._parent: AbstractTreeItem | None = None
 
-        # init properties
+        # init properties and attributes
         self.name: str | None = name
         self.parent: AbstractTreeItem | None = parent
         self.children: list[AbstractTreeItem] = []
@@ -195,7 +206,7 @@ class AbstractTreeItem():
                 return True
             item = item.parent
         return False
-    
+
     def set_parent(self, parent: AbstractTreeItem) -> bool:
         try:
             self.parent = parent
@@ -280,7 +291,9 @@ class AbstractTreeItem():
     
     def get_data(self, column: int):
         # raise NotImplementedError
-        return repr(self)  # for debugging
+        if column == 0:
+            # for debugging
+            return repr(self)
     
     def set_data(self, column: int, value) -> bool:
         # raise NotImplementedError
