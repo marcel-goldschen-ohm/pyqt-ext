@@ -1,7 +1,7 @@
 # pyqt-ext
 Collection of PyQt/PySide widgets/tools.
 
-In addition to being useful out-of-the-box, you may find these tools to be useful templates for rolling your own custom widgets.
+In addition to being useful out-of-the-box, you may find these tools to be helpful templates for rolling your own custom widgets.
 
 - `tree/`
     - [Tree model/view interface](docs/AbstractTree.md)
