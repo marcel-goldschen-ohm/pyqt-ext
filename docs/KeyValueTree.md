@@ -3,9 +3,9 @@ Model/View implementation of a tree of (key, value) pairs that builds off of [ab
 
 # Table of contents
 - [Install](#install)
-- [Quick start example](#quick-start-example): Example of a simple custom tree model/view.
-- [KeyValueTreeItem](#keyvaluetreeitem): Generic tree node with parent/child linkage, navigation, path access, iteration, etc. *Only missing the data you want to associate with it.*
-- [KeyValueTreeModel](#keyvaluetreemodel): Tree model that knows how to work with `AbstractTreeItem`s.
+- [Quick start example](#quick-start-example)
+- [KeyValueTreeItem](#keyvaluetreeitem): AbstractTreeItem with *key*, *value* data.
+- [KeyValueTreeModel](#keyvaluetreemodel): Tree model that knows how to work with `KeyValueTreeItem`s.
 - [KeyValueDndTreeModel](#keyvaluedndtreemodel): Tree model with default drag-and-drop functionality.
 - [KeyValueTreeView](#keyvaluetreeview): Tree view widget with context menu and Ctrl+Wheel expand/fold.
 
