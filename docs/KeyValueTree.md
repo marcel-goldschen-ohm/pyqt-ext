@@ -20,8 +20,7 @@ Source code: [KeyValueTreeExample.py](../examples/KeyValueTreeExample.py)
 
 Create the application...
 ```python
-# should work with PySide6, PyQt6, or PyQt5
-from PySide6.QtWidgets import QApplicaiton
+from qtpy.QtWidgets import QApplicaiton
 app = QApplicaiton()
 ```
 

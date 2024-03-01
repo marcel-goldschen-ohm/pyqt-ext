@@ -20,8 +20,7 @@ Source code: [CustomTreeExample.py](../examples/CustomTreeExample.py)
 
 Create the application...
 ```python
-# should work with PySide6, PyQt6, or PyQt5
-from PySide6.QtWidgets import QApplicaiton
+from qtpy.QtWidgets import QApplicaiton
 app = QApplicaiton()
 ```
 
@@ -98,8 +97,7 @@ greatgrandchild: None
 Custom tree model with drag-and-drop derived from [AbstractDndTreeModel](#abstractdndtreemodel) for an editable tree with two columns: name, data...
 ```python
 from pyqt_ext.tree import AbstractDndTreeModel
-# should work with PySide6, PyQt6, or PyQt5
-from PySide6.QtCore import QModelIndex
+from qtpy.QtCore import QModelIndex
 
 class CustomDndTreeModel(AbstractDndTreeModel):
 

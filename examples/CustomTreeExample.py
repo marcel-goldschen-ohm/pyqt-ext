@@ -1,7 +1,7 @@
 from __future__ import annotations
-from PySide6.QtWidgets import QApplication
-from PySide6.QtCore import QModelIndex
-from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel, AbstractDndTreeModel, TreeView
+from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import QModelIndex
+from pyqt_ext.tree import AbstractTreeItem, AbstractDndTreeModel, TreeView
 
 
 class CustomTreeItem(AbstractTreeItem):

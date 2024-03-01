@@ -9,8 +9,8 @@ In addition to being useful out-of-the-box, you may find these tools to be helpf
 - `utils/`
     - [Color utils](docs/ColorUtils.md)
 - `widgets/`
-    - 🚧 Color selection button
-    - 🚧 Multi-value spinbox
+    - [Color selection button](docs/ColorButton.md)
+    - [Multi-value spinbox](docs/MultiValueSpinBox.md)
 
 # Install
 Should work with PySide6, PyQt6, or PyQt5.
