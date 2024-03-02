@@ -327,3 +327,30 @@ class AbstractDndTreeModel(AbstractTreeModel):
     
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.DropAction.MoveAction | Qt.DropAction.CopyAction
+
+
+def test_model():
+    root = AbstractTreeItem()
+    AbstractTreeItem(parent=root)
+    root.append_child(AbstractTreeItem(name='child2'))
+    root.insert_child(1, AbstractTreeItem(name='child3'))
+    root.children[1].append_child(AbstractTreeItem())
+    grandchild2 = AbstractTreeItem(name='grandchild2')
+    grandchild2.parent = root['child2']
+    AbstractTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
+
+    print('\nInitial model...')
+    model = AbstractTreeModel(root)
+    print(model.root())
+
+    print('\nRemove grandchild2...')
+    model.removeItem(grandchild2)
+    print(model.root())
+
+    print('\nInsert grandchild2...')
+    model.insertItems(0, [grandchild2], model.indexFromItem(root['child2']))
+    print(model.root())
+
+
+if __name__ == '__main__':
+    test_model()

@@ -84,7 +84,7 @@ class AbstractTreeItem():
     def parent(self, parent: AbstractTreeItem | None) -> None:
         if self.parent is parent:
             return
-        if parent.has_ancestor(self):
+        if (parent is not None) and parent.has_ancestor(self):
             raise ValueError('Cannot set parent to a descendant.')
         if self.parent is not None:
             # detach from old parent
@@ -343,11 +343,21 @@ def test_tree():
     grandchild2 = AbstractTreeItem(name='grandchild2')
     grandchild2.parent = root['child2']
     AbstractTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
+    
+    print('\nInitial tree...')
     print(root)
 
-    print('Depth first iteration...')
+    print('\nDepth first iteration...')
     for item in root.depth_first():
         print(item.name)
+
+    print('\nRemove grandchild2...')
+    grandchild2.parent = None
+    print(root)
+
+    print('\nInsert grandchild2...')
+    grandchild2.parent = root['child2']
+    print(root)
 
 
 if __name__ == '__main__':

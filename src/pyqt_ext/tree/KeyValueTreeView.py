@@ -49,10 +49,7 @@ class KeyValueTreeView(TreeView):
         item_path = item.path
         if len(item_path) > 50:
             item_path = '...' + item_path[-47:]
-        answer = QMessageBox.question(self, 'Delete', f'Delete {item_path}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
-        if answer == QMessageBox.StandardButton.Yes:
-            model: KeyValueTreeModel = self.model()
-            model.removeItem(item)
+        TreeView.askToRemoveItem(self, item, label=item_path)
 
 
 def test_live():

@@ -114,8 +114,13 @@ class TreeView(QTreeView):
         for col in range(model.columnCount()):
             self.resizeColumnToContents(col)
     
-    def askToRemoveItem(self, item: AbstractTreeItem):
-        answer = QMessageBox.question(self, 'Remove', f'Remove {repr(item)}?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+    def askToRemoveItem(self, item: AbstractTreeItem, label: str = None):
+        if label is None:
+            label = item.name
+        answer = QMessageBox.question(self, 'Remove', f'Remove {label}?', 
+            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+            defaultButton=QMessageBox.StandardButton.No
+        )
         if answer == QMessageBox.StandardButton.Yes:
             model: AbstractTreeModel = self.model()
             model.removeItem(item)
