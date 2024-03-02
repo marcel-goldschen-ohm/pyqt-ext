@@ -179,12 +179,6 @@ class TreeView(QTreeView):
         elif drop_pos == QAbstractItemView.DropIndicatorPosition.BelowItem:
             dst_row += 1
         
-        src_item: AbstractTreeItem = model.itemFromIndex(src_index)
-        dst_parent_item: AbstractTreeItem = model.itemFromIndex(dst_parent_index)
-        if dst_parent_item.has_ancestor(src_item):
-            event.ignore()
-            return
-        
         if event.dropAction() == Qt.DropAction.MoveAction:
             model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
         else:

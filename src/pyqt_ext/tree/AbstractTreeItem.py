@@ -29,11 +29,6 @@ class AbstractTreeItem():
     """
     
     def __init__(self, name: str | None = None, parent: AbstractTreeItem | None = None):
-        # ensure properties are defined
-        self._name: str | None = None
-        self._parent: AbstractTreeItem | None = None
-
-        # init properties and attributes
         self.name: str | None = name
         self.parent: AbstractTreeItem | None = parent
         self.children: list[AbstractTreeItem] = []
@@ -83,7 +78,7 @@ class AbstractTreeItem():
     
     @property
     def parent(self) -> AbstractTreeItem | None:
-        return self._parent
+        return getattr(self, '_parent', None)
     
     @parent.setter
     def parent(self, parent: AbstractTreeItem | None) -> None:
@@ -103,9 +98,10 @@ class AbstractTreeItem():
     
     @property
     def name(self) -> str:
-        if self._name is None:
+        name: str | None = getattr(self, '_name', None)
+        if name is None:
             return self.__class__.__name__ + '@' + str(id(self))
-        return self._name
+        return name
     
     @name.setter
     def name(self, name: str) -> None:
@@ -247,18 +243,16 @@ class AbstractTreeItem():
     
     def depth_first(self) -> Iterator[AbstractTreeItem]:
         item: AbstractTreeItem = self
-        while item is not None:
+        end_item: AbstractTreeItem | None = self._last_depth_first()._next_depth_first()
+        while item is not end_item:
             yield item
             item = item._next_depth_first()
-            if (item is not None) and not item.has_ancestor(self):
-                item = None
     
     def reverse_depth_first(self) -> Iterator[AbstractTreeItem]:
         item: AbstractTreeItem = self._last_depth_first()
-        while item is not None:
+        end_item: AbstractTreeItem | None = self._prev_depth_first()
+        while item is not end_item:
             yield item
-            if item is self:
-                break
             item = item._prev_depth_first()
     
     def _next_depth_first(self) -> AbstractTreeItem | None:
@@ -282,6 +276,46 @@ class AbstractTreeItem():
             return self.parent
     
     def _last_depth_first(self) -> AbstractTreeItem:
+        item: AbstractTreeItem = self
+        while item.children:
+            item = item.last_child
+        return item
+    
+    # leaf iteration --------------------------------------------------
+    
+    def leaves(self) -> Iterator[AbstractTreeItem]:
+        item: AbstractTreeItem = self._first_leaf()
+        end_item: AbstractTreeItem | None = self._last_leaf()._next_leaf()
+        while item is not end_item:
+            yield item
+            item = item._next_leaf()
+    
+    def reverse_leaves(self) -> Iterator[AbstractTreeItem]:
+        item: AbstractTreeItem = self._last_leaf()
+        end_item: AbstractTreeItem | None = self._first_leaf()._prev_leaf()
+        while item is not end_item:
+            yield item
+            item = item._prev_leaf()
+    
+    def _next_leaf(self) -> AbstractTreeItem | None:
+        try:
+            return self._next_depth_first()._first_leaf()
+        except:
+            return None
+
+    def _prev_leaf(self) -> AbstractTreeItem | None:
+        item: AbstractTreeItem | None = self._prev_depth_first()
+        while (item is not None) and item.children:
+            item = item._prev_depth_first()
+        return item
+    
+    def _first_leaf(self) -> AbstractTreeItem:
+        item: AbstractTreeItem = self
+        while item.children:
+            item = item.first_child
+        return item
+    
+    def _last_leaf(self) -> AbstractTreeItem:
         item: AbstractTreeItem = self
         while item.children:
             item = item.last_child

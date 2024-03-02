@@ -14,7 +14,7 @@ class AbstractTreeModel(QAbstractItemModel):
     This class can work as is, but in general you will derive from it
         and reimplement `columnCount`, `flags`, etc. to suit your data.
 
-    For drag and drop, reimplement `supportedDropActions` and `flags` as needed.
+    For drag-and-drop, reimplement `supportedDropActions` and `flags` as needed.
     """
 
     def __init__(self, root: AbstractTreeItem = None, parent: QObject = None):
@@ -270,6 +270,12 @@ class AbstractTreeModel(QAbstractItemModel):
         self.endInsertRows()
         return True
     
+    # !!! not implemented
+    def moveRows(self, src_parent_index: QModelIndex, src_row: int, count: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
+        """ See `moveRow` instead.
+        """
+        return False
+    
     def moveRow(self, src_parent_index: QModelIndex, src_row: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
         """ Calls `AbstractTreeItem.insert_child` to move an item (e.g., row) within the tree.
         
@@ -297,13 +303,17 @@ class AbstractTreeModel(QAbstractItemModel):
         if dst_parent_item.has_ancestor(src_item):
             # cannot move an item to one of its descendants
             return False
+        if src_parent_item is dst_parent_item:
+            if abs(src_row - dst_row) <= 1:
+                # attempt to move to the same position
+                return False
 
         self.beginMoveRows(src_parent_index, src_row, src_row, dst_parent_index, dst_row)
         success: bool = dst_parent_item.insert_child(dst_row, src_item)
         self.endMoveRows()
         return success
     
-    # !!! reimplement for drag and drop
+    # !!! reimplement for drag-and-drop
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.DropAction.IgnoreAction
 
