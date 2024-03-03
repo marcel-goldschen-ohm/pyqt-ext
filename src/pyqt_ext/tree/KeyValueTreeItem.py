@@ -90,6 +90,7 @@ class KeyValueTreeItem(AbstractTreeItem):
             elif old_parent.is_list():
                 if self.value in old_parent.value:
                     old_parent.value.remove(self.value)
+        
         # insert value into new parent container
         if parent is not None:
             if parent.is_dict():

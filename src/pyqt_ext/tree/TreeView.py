@@ -30,9 +30,6 @@ class TreeView(QTreeView):
         # context menu
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested.connect(self.onCustomContextMenuRequested)
-
-        # keep track of depth
-        self._depth: int = 0
     
     def setModel(self, model: AbstractTreeModel):
         QTreeView.setModel(self, model)
@@ -137,10 +134,11 @@ class TreeView(QTreeView):
     
     def mouseWheelEvent(self, event: QWheelEvent):
         delta: int = event.angleDelta().y()
+        depth = getattr(self, '_depth', 0)
         if delta > 0:
-            self.expandToDepth(self._depth + 1)
+            self.expandToDepth(depth + 1)
         elif delta < 0:
-            self.expandToDepth(self._depth - 1)
+            self.expandToDepth(depth - 1)
     
     # def mousePressEvent(self, event: QMouseEvent):
     #     if self.selectionMode() != QAbstractItemView.SelectionMode.SingleSelection:

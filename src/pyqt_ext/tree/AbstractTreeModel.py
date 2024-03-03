@@ -140,11 +140,10 @@ class AbstractTreeModel(QAbstractItemModel):
         """
         if not index.isValid():
             # root item
-            flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
             if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
                 # allow drops on the root item (i.e., this allows drops on the viewport away from other items)
-                flags |= Qt.ItemFlag.ItemIsDropEnabled
-            return flags
+                return Qt.ItemFlag.ItemIsDropEnabled
+            return Qt.ItemFlag.NoItemFlags
         flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
             flags |= Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
