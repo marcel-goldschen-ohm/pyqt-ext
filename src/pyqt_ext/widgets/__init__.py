@@ -1,2 +1,3 @@
 from pyqt_ext.widgets.ColorButton import ColorButton
+from pyqt_ext.widgets.DetailsSection import DetailsSection
 from pyqt_ext.widgets.MultiValueSpinBox import MultiValueSpinBox

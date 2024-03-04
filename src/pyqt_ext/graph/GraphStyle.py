@@ -8,7 +8,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from pyqt_ext.utils import ColorType, toQColor, toColorStr
-from pyqt_ext.widgets import ColorButton
+from pyqt_ext.widgets import ColorButton, DetailsSection
 
 
 class GraphStyle(dict):
@@ -206,12 +206,22 @@ class GraphStylePanel(QWidget):
 
         if styles is None:
             styles = ['color', 'linestyle', 'linewidth', 'marker', 'markersize', 'markeredgewidth', 'markeredgecolor', 'markerfacecolor']
+        else:
+            styles = [style.lower() for style in styles]
         self.styles = styles
 
-        form = QFormLayout(self)
+        vbox = QVBoxLayout(self)
+        vbox.setContentsMargins(10, 10, 10, 10)
+        vbox.setSpacing(10)
 
-        for style in self.styles:
-            if style == 'color':
+        # line styles
+        if set(['color', 'linestyle', 'linewidth']).intersection(self.styles):
+            self.lineSection = DetailsSection(title='Line')
+            vbox.addWidget(self.lineSection)
+            form = QFormLayout()
+            form.setContentsMargins(10, 10, 10, 10)
+            form.setSpacing(10)
+            if 'color' in self.styles:
                 self.colorButton = ColorButton()
                 self.autoColorCheckBox = QCheckBox('Auto')
                 self.autoColorCheckBox.setChecked(False)
@@ -223,7 +233,7 @@ class GraphStylePanel(QWidget):
                 colorLayout.addWidget(self.autoColorCheckBox)
                 self.colorButton.setVisible(not self.autoColorCheckBox.isChecked())
                 form.addRow('Color', colorLayout)
-            elif style == 'linestyle':
+            if 'linestyle' in self.styles:
                 # Qt.PenStyle.NoPen = 0
                 # Qt.PenStyle.SolidLine = 1
                 # Qt.PenStyle.DashLine = 2
@@ -234,54 +244,89 @@ class GraphStylePanel(QWidget):
                 self.lineStyleComboBox.addItems(['No Line', 'Solid Line', 'Dash Line', 'Dot Line', 'Dash Dot Line'])
                 self.lineStyleComboBox.setCurrentIndex(1)
                 form.addRow('Line Style', self.lineStyleComboBox)
-            elif style == 'linewidth':
+            if 'linewidth' in self.styles:
                 self.lineWidthSpinBox = QDoubleSpinBox()
                 self.lineWidthSpinBox.setMinimum(0)
                 self.lineWidthSpinBox.setValue(1)
                 form.addRow('Line Width', self.lineWidthSpinBox)
-            elif style == 'marker':
-                # pyqtgraph default markers
-                # self.markers = ['none', 'o', 't', 't1', 't2', 't3', 's', 'p', 'h', 'star', '+', 'd', 'x']
-                self.markerComboBox = QComboBox()
-                self.markerComboBox.addItems([
-                    'None', 'Circle', 'Triangle Down', 'Triangle Up', 'Triangle Right', 'Triangle Left', 'Square', 
-                    'Pentagon', 'Hexagon', 'Star', 'Plus', 'Prism', 'Cross'])
-                self.markerComboBox.setCurrentIndex(0)
-                form.addRow('Marker', self.markerComboBox)
-            elif style == 'markersize':
-                self.markerSizeSpinBox = QDoubleSpinBox()
-                self.markerSizeSpinBox.setMinimum(0)
-                self.markerSizeSpinBox.setValue(10)
-                form.addRow('Marker Size', self.markerSizeSpinBox)
-            elif style == 'markeredgewidth':
-                self.markerEdgeWidthSpinBox = QDoubleSpinBox()
-                self.markerEdgeWidthSpinBox.setMinimum(0)
-                self.markerEdgeWidthSpinBox.setValue(self.lineWidthSpinBox.value())
-                form.addRow('Marker Edge Width', self.markerEdgeWidthSpinBox)
-            elif style == 'markeredgecolor':
-                self.markerEdgeColorButton = ColorButton()
-                self.autoMarkerEdgeColorCheckBox = QCheckBox('Auto')
-                self.autoMarkerEdgeColorCheckBox.setChecked(True)
-                self.autoMarkerEdgeColorCheckBox.stateChanged.connect(lambda isChecked: self.markerEdgeColorButton.setVisible(not isChecked))
-                markerEdgeColorLayout = QHBoxLayout()
-                markerEdgeColorLayout.setContentsMargins(0, 0, 0, 0)
-                markerEdgeColorLayout.setSpacing(5)
-                markerEdgeColorLayout.addWidget(self.markerEdgeColorButton)
-                markerEdgeColorLayout.addWidget(self.autoMarkerEdgeColorCheckBox)
-                self.markerEdgeColorButton.setVisible(not self.autoMarkerEdgeColorCheckBox.isChecked())
-                form.addRow('Marker Edge Color', markerEdgeColorLayout)
-            elif style == 'markerfacecolor':
-                self.markerFaceColorButton = ColorButton()
-                self.autoMarkerFaceColorCheckBox = QCheckBox('Auto')
-                self.autoMarkerFaceColorCheckBox.setChecked(True)
-                self.autoMarkerFaceColorCheckBox.stateChanged.connect(lambda isChecked: self.markerFaceColorButton.setVisible(not isChecked))
-                markerFaceColorLayout = QHBoxLayout()
-                markerFaceColorLayout.setContentsMargins(0, 0, 0, 0)
-                markerFaceColorLayout.setSpacing(5)
-                markerFaceColorLayout.addWidget(self.markerFaceColorButton)
-                markerFaceColorLayout.addWidget(self.autoMarkerFaceColorCheckBox)
-                self.markerFaceColorButton.setVisible(not self.autoMarkerFaceColorCheckBox.isChecked())
-                form.addRow('Marker Face Color', markerFaceColorLayout)
+            self.lineSection.setLayout(form)
+
+        # form = QFormLayout(self)
+        # form.setContentsMargins(10, 10, 10, 10)
+        # form.setSpacing(10)
+
+        # for style in self.styles:
+        #     if style == 'color':
+        #         self.colorButton = ColorButton()
+        #         self.autoColorCheckBox = QCheckBox('Auto')
+        #         self.autoColorCheckBox.setChecked(False)
+        #         self.autoColorCheckBox.stateChanged.connect(lambda isChecked: self.colorButton.setVisible(not isChecked))
+        #         colorLayout = QHBoxLayout()
+        #         colorLayout.setContentsMargins(0, 0, 0, 0)
+        #         colorLayout.setSpacing(5)
+        #         colorLayout.addWidget(self.colorButton)
+        #         colorLayout.addWidget(self.autoColorCheckBox)
+        #         self.colorButton.setVisible(not self.autoColorCheckBox.isChecked())
+        #         form.addRow('Color', colorLayout)
+        #     elif style == 'linestyle':
+        #         # Qt.PenStyle.NoPen = 0
+        #         # Qt.PenStyle.SolidLine = 1
+        #         # Qt.PenStyle.DashLine = 2
+        #         # Qt.PenStyle.DotLine = 3
+        #         # Qt.PenStyle.DashDotLine = 4
+        #         self.lineStyles = ['none', '-', '--', ':', '-.']
+        #         self.lineStyleComboBox = QComboBox()
+        #         self.lineStyleComboBox.addItems(['No Line', 'Solid Line', 'Dash Line', 'Dot Line', 'Dash Dot Line'])
+        #         self.lineStyleComboBox.setCurrentIndex(1)
+        #         form.addRow('Line Style', self.lineStyleComboBox)
+        #     elif style == 'linewidth':
+        #         self.lineWidthSpinBox = QDoubleSpinBox()
+        #         self.lineWidthSpinBox.setMinimum(0)
+        #         self.lineWidthSpinBox.setValue(1)
+        #         form.addRow('Line Width', self.lineWidthSpinBox)
+        #     elif style == 'marker':
+        #         # pyqtgraph default markers
+        #         # self.markers = ['none', 'o', 't', 't1', 't2', 't3', 's', 'p', 'h', 'star', '+', 'd', 'x']
+        #         self.markerComboBox = QComboBox()
+        #         self.markerComboBox.addItems([
+        #             'None', 'Circle', 'Triangle Down', 'Triangle Up', 'Triangle Right', 'Triangle Left', 'Square', 
+        #             'Pentagon', 'Hexagon', 'Star', 'Plus', 'Diamond', 'Cross'])
+        #         self.markerComboBox.setCurrentIndex(0)
+        #         form.addRow('Marker', self.markerComboBox)
+        #     elif style == 'markersize':
+        #         self.markerSizeSpinBox = QDoubleSpinBox()
+        #         self.markerSizeSpinBox.setMinimum(0)
+        #         self.markerSizeSpinBox.setValue(10)
+        #         form.addRow('Marker Size', self.markerSizeSpinBox)
+        #     elif style == 'markeredgewidth':
+        #         self.markerEdgeWidthSpinBox = QDoubleSpinBox()
+        #         self.markerEdgeWidthSpinBox.setMinimum(0)
+        #         self.markerEdgeWidthSpinBox.setValue(self.lineWidthSpinBox.value())
+        #         form.addRow('Marker Edge Width', self.markerEdgeWidthSpinBox)
+        #     elif style == 'markeredgecolor':
+        #         self.markerEdgeColorButton = ColorButton()
+        #         self.autoMarkerEdgeColorCheckBox = QCheckBox('Auto')
+        #         self.autoMarkerEdgeColorCheckBox.setChecked(True)
+        #         self.autoMarkerEdgeColorCheckBox.stateChanged.connect(lambda isChecked: self.markerEdgeColorButton.setVisible(not isChecked))
+        #         markerEdgeColorLayout = QHBoxLayout()
+        #         markerEdgeColorLayout.setContentsMargins(0, 0, 0, 0)
+        #         markerEdgeColorLayout.setSpacing(5)
+        #         markerEdgeColorLayout.addWidget(self.markerEdgeColorButton)
+        #         markerEdgeColorLayout.addWidget(self.autoMarkerEdgeColorCheckBox)
+        #         self.markerEdgeColorButton.setVisible(not self.autoMarkerEdgeColorCheckBox.isChecked())
+        #         form.addRow('Marker Edge Color', markerEdgeColorLayout)
+        #     elif style == 'markerfacecolor':
+        #         self.markerFaceColorButton = ColorButton()
+        #         self.autoMarkerFaceColorCheckBox = QCheckBox('Auto')
+        #         self.autoMarkerFaceColorCheckBox.setChecked(True)
+        #         self.autoMarkerFaceColorCheckBox.stateChanged.connect(lambda isChecked: self.markerFaceColorButton.setVisible(not isChecked))
+        #         markerFaceColorLayout = QHBoxLayout()
+        #         markerFaceColorLayout.setContentsMargins(0, 0, 0, 0)
+        #         markerFaceColorLayout.setSpacing(5)
+        #         markerFaceColorLayout.addWidget(self.markerFaceColorButton)
+        #         markerFaceColorLayout.addWidget(self.autoMarkerFaceColorCheckBox)
+        #         self.markerFaceColorButton.setVisible(not self.autoMarkerFaceColorCheckBox.isChecked())
+        #         form.addRow('Marker Face Color', markerFaceColorLayout)
     
     def graphStyle(self) -> GraphStyle:
         graphStyle = GraphStyle()
@@ -290,34 +335,40 @@ class GraphStylePanel(QWidget):
                 if not self.autoColorCheckBox.isChecked():
                     color = self.colorButton.color()
                     if color is not None:
-                        graphStyle['color'] = toColorStr(color)
+                        graphStyle.setColor(color)
             elif style == 'linestyle':
-                graphStyle['linestyle'] = self.lineStyles[self.lineStyleComboBox.currentIndex()]
+                index = self.lineStyleComboBox.currentIndex()
+                lineStyle = self.lineStyles[index]
+                graphStyle.setLineStyle(lineStyle)
             elif style == 'linewidth':
-                graphStyle['linewidth'] = self.lineWidthSpinBox.value()
+                lineWidth = self.lineWidthSpinBox.value()
+                graphStyle.setLineWidth(lineWidth)
             elif style == 'marker':
-                graphStyle['marker'] = self.markerComboBox.currentText().lower()
+                marker = self.markerComboBox.currentText().lower()
+                graphStyle.setMarker(marker)
             elif style == 'markersize':
-                graphStyle['markersize'] = self.markerSizeSpinBox.value()
+                markerSize = self.markerSizeSpinBox.value()
+                graphStyle.setMarkerSize(markerSize)
             elif style == 'markeredgewidth':
-                graphStyle['markeredgewidth'] = self.markerEdgeWidthSpinBox.value()
+                markerEdgeWidth = self.markerEdgeWidthSpinBox.value()
+                graphStyle.setMarkerEdgeWidth(markerEdgeWidth)
             elif style == 'markeredgecolor':
                 if not self.autoMarkerEdgeColorCheckBox.isChecked():
-                    markeredgecolor = self.markerEdgeColorButton.color()
-                    if markeredgecolor is not None:
-                        graphStyle['markeredgecolor'] = toColorStr(markeredgecolor)
+                    markerEdgeColor = self.markerEdgeColorButton.color()
+                    if markerEdgeColor is not None:
+                        graphStyle.setMarkerEdgeColor(markerEdgeColor)
             elif style == 'markerfacecolor':
                 if not self.autoMarkerFaceColorCheckBox.isChecked():
-                    markerfacecolor = self.markerFaceColorButton.color()
-                    if markerfacecolor is not None:
-                        graphStyle['markerfacecolor'] = toColorStr(markerfacecolor)
+                    markerFaceColor = self.markerFaceColorButton.color()
+                    if markerFaceColor is not None:
+                        graphStyle.setMarkerFaceColor(markerFaceColor)
         return graphStyle
     
     def setGraphStyle(self, graphStyle: GraphStyle):
         for style in self.styles:
             if style == 'color':
                 try:
-                    color = graphStyle['color']
+                    color = graphStyle.color()
                     self.autoColorCheckBox.setChecked(color is None)
                     if self.autoColorCheckBox.isChecked():
                         self.colorButton.hide()
@@ -328,60 +379,63 @@ class GraphStylePanel(QWidget):
                     pass
             elif style == 'linestyle':
                 try:
-                    linestyle = graphStyle['linestyle']
-                    self.lineStyleComboBox.setCurrentIndex(self.lineStyles.index(linestyle))
+                    lineStyle = graphStyle.lineStyle()
+                    self.lineStyleComboBox.setCurrentIndex(self.lineStyles.index(lineStyle))
                 except:
                     pass
             elif style == 'linewidth':
                 try:
-                    linewidth = graphStyle['linewidth']
-                    self.lineWidthSpinBox.setValue(linewidth)
+                    lineWidth = graphStyle.lineWidth()
+                    self.lineWidthSpinBox.setValue(lineWidth)
                 except:
                     pass
             elif style == 'marker':
                 try:
-                    marker = graphStyle['marker']
-                    self.markerComboBox.setCurrentIndex(self.markers.index(marker))
+                    marker = graphStyle.marker()
+                    markers = [item.text().lower() for item in self.markerComboBox.items()]
+                    index = self.markers.index(marker)
+                    self.markerComboBox.setCurrentIndex(index)
                 except:
                     pass
             elif style == 'markersize':
                 try:
-                    markersize = graphStyle['markersize']
-                    self.markerSizeSpinBox.setValue(markersize)
+                    markerSize = graphStyle.markerSize()
+                    self.markerSizeSpinBox.setValue(markerSize)
                 except:
                     pass
             elif style == 'markeredgewidth':
                 try:
-                    markeredgewidth = graphStyle['markeredgewidth']
-                    self.markerEdgeWidthSpinBox.setValue(markeredgewidth)
+                    markerEdgeWidth = graphStyle.setMarkerEdgeWidth()
+                    self.markerEdgeWidthSpinBox.setValue(markerEdgeWidth)
                 except:
                     pass
             elif style == 'markeredgecolor':
                 try:
-                    markeredgecolor = graphStyle['markeredgecolor']
-                    self.autoMarkerEdgeColorCheckBox.setChecked(markeredgecolor is None)
+                    markerEdgeColor = graphStyle.markerEdgeColor()
+                    self.autoMarkerEdgeColorCheckBox.setChecked(markerEdgeColor is None)
                     if self.autoMarkerEdgeColorCheckBox.isChecked():
                         self.markerEdgeColorButton.hide()
                     else:
                         self.markerEdgeColorButton.show()
-                        self.markerEdgeColorButton.setColor(markeredgecolor)
+                        self.markerEdgeColorButton.setColor(markerEdgeColor)
                 except:
                     pass
             elif style == 'markerfacecolor':
                 try:
-                    markerfacecolor = graphStyle['markerfacecolor']
-                    self.autoMarkerFaceColorCheckBox.setChecked(markerfacecolor is None)
+                    markerFaceColor = graphStyle.markerFaceColor()
+                    self.autoMarkerFaceColorCheckBox.setChecked(markerFaceColor is None)
                     if self.autoMarkerFaceColorCheckBox.isChecked():
                         self.markerFaceColorButton.hide()
                     else:
                         self.markerFaceColorButton.show()
-                        self.markerFaceColorButton.setColor(markerfacecolor)
+                        self.markerFaceColorButton.setColor(markerFaceColor)
                 except:
                     pass
 
 
-def editGraphStyle(graphStyle: GraphStyle, parent: QWidget = None, title: str = None) -> GraphStyle | None:
-    panel = GraphStylePanel()
+def editGraphStyle(graphStyle: GraphStyle, styles: list[str] = None, parent: QWidget = None, title: str = None) -> GraphStyle | None:
+    panel = GraphStylePanel(styles)
+    panel.layout().setContentsMargins(0, 0, 0, 0)
     panel.setGraphStyle(graphStyle)
 
     dlg = QDialog(parent)
@@ -406,7 +460,7 @@ def test_live():
     app = QApplication()
     ui = GraphStylePanel()
     ui.show()
-    QTimer.singleShot(1000, lambda: print(editGraphStyle(GraphStyle())))
+    # QTimer.singleShot(1000, lambda: print(editGraphStyle(GraphStyle())))
     app.exec()
 
 
