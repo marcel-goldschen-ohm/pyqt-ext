@@ -72,7 +72,8 @@ class AbstractTreeItem():
                 child_names = [child.name for child in item.children]
                 child_index = child_names.index(name)
                 item = item.children[child_index]
-            except:
+            except Exception as err:
+                print(err)
                 return None
         return item
     
@@ -207,14 +208,16 @@ class AbstractTreeItem():
         try:
             self.parent = parent
             return True
-        except:
+        except Exception as err:
+            print(err)
             return False
     
     def append_child(self, child: AbstractTreeItem) -> bool:
         try:
             child.parent = self
             return True
-        except:
+        except Exception as err:
+            print(err)
             return False
     
     def insert_child(self, index: int, child: AbstractTreeItem) -> bool:
@@ -227,7 +230,8 @@ class AbstractTreeItem():
             if pos != index:
                 self.children.insert(index, self.children.pop(pos))
             return True
-        except:
+        except Exception as err:
+            print(err)
             return False
     
     def remove_child(self, child: AbstractTreeItem) -> bool:
@@ -236,7 +240,8 @@ class AbstractTreeItem():
         try:
             child.parent = None
             return True
-        except:
+        except Exception as err:
+            print(err)
             return False
     
     # depth-first iteration --------------------------------------------------
