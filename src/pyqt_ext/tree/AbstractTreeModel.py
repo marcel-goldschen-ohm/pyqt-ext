@@ -303,7 +303,7 @@ class AbstractTreeModel(QAbstractItemModel):
             # cannot move an item to one of its descendants
             return False
         if src_parent_item is dst_parent_item:
-            if abs(src_row - dst_row) <= 1:
+            if (src_row == dst_row) or (src_row + 1 == dst_row):
                 # attempt to move to the same position
                 return False
 

@@ -33,15 +33,15 @@ class AbstractTreeItem():
         self.parent: AbstractTreeItem | None = parent
         self.children: list[AbstractTreeItem] = []
     
-    def __repr__(self):
+    def __repr__(self) -> str:
         # Return a single line string representation of this item.
         # See __str__ for a multi-line representation of the tree.
-        return self.name
+        return f'name={self.name}, parent={self.parent.name if self.parent else None}, children={[child.name for child in self.children]}'
     
-    def __str__(self):
+    def __str__(self) -> str:
         # returns a multi-line string representation of this item's tree branch
         items: list[AbstractTreeItem] = list(self.depth_first())
-        lines: list[str] = [repr(item) for item in items]
+        lines: list[str] = [item.name for item in items]
         for i, item in enumerate(items):
             if item is self:
                 continue
@@ -77,6 +77,26 @@ class AbstractTreeItem():
                 return None
         return item
     
+    def dumps(self) -> str:
+        # returns a multi-line string representation of this item's tree branch
+        items: list[AbstractTreeItem] = list(self.depth_first())
+        lines: list[str] = [repr(item) for item in items]
+        for i, item in enumerate(items):
+            if item is self:
+                continue
+            if item is item.parent.last_child:
+                lines[i] = '\u2514' + '\u2500'*2 + ' ' + lines[i]
+            else:
+                lines[i] = '\u251C' + '\u2500'*2 + ' ' + lines[i]
+            parent = item.parent
+            while parent is not self:
+                if i < items.index(parent.last_sibling):
+                    lines[i] = '\u2502' + ' '*3 + lines[i]
+                else:
+                    lines[i] = ' '*4 + lines[i]
+                parent = parent.parent
+        return '\n'.join(lines)
+    
     @property
     def parent(self) -> AbstractTreeItem | None:
         return getattr(self, '_parent', None)
@@ -101,7 +121,7 @@ class AbstractTreeItem():
     def name(self) -> str:
         name: str | None = getattr(self, '_name', None)
         if name is None:
-            return self.__class__.__name__ + '@' + str(id(self))
+            return f'{self.__class__.__name__}@{id(self)}'
         return name
     
     @name.setter
@@ -228,7 +248,10 @@ class AbstractTreeItem():
             # move item to index
             pos = self.children.index(child)
             if pos != index:
-                self.children.insert(index, self.children.pop(pos))
+                if pos < index:
+                    index -= 1
+                if pos != index:
+                    self.children.insert(index, self.children.pop(pos))
             return True
         except Exception as err:
             print(err)
