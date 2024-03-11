@@ -8,7 +8,7 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from pyqt_ext.utils import ColorType, toQColor, toColorStr
-from pyqt_ext.widgets import ColorButton, DetailsSection
+from pyqt_ext.widgets import ColorButton, CollapsibleSection
 
 
 class GraphStyle(dict):
@@ -216,7 +216,7 @@ class GraphStylePanel(QWidget):
 
         # line styles
         if set(['color', 'linestyle', 'linewidth']).intersection(self.styles):
-            self.lineSection = DetailsSection(title='Line')
+            self.lineSection = CollapsibleSection(title='Line')
             vbox.addWidget(self.lineSection)
             form = QFormLayout()
             form.setContentsMargins(10, 10, 10, 10)
