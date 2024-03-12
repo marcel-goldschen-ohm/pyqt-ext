@@ -269,6 +269,10 @@ class AbstractTreeModel(QAbstractItemModel):
         self.endInsertRows()
         return True
     
+    def appendItems(self, items: list[AbstractTreeItem], parent_index: QModelIndex = QModelIndex()) -> bool:
+        row = self.rowCount(parent_index)
+        return self.insertItems(row, items, parent_index)
+    
     # !!! not implemented
     def moveRows(self, src_parent_index: QModelIndex, src_row: int, count: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
         """ See `moveRow` instead.
