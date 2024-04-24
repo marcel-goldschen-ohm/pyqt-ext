@@ -1,9 +1,8 @@
 """ PySide/PyQt expandable/collapsible section.
 """
 
-from qtpy.QtCore import *
-from qtpy.QtGui import *
-from qtpy.QtWidgets import *
+from qtpy.QtCore import Qt, QPropertyAnimation, QParallelAnimationGroup, QAbstractAnimation
+from qtpy.QtWidgets import QWidget, QToolButton, QFrame, QScrollArea, QPushButton, QLineEdit, QSizePolicy, QLayout, QFormLayout, QVBoxLayout, QGridLayout
 import qtawesome as qta
 
 
@@ -109,6 +108,9 @@ class CollapsibleSection(QWidget):
 
 
 def test_live():
+    from qtpy.QtCore import QTimer
+    from qtpy.QtWidgets import QApplication
+
     app = QApplication()
 
     ui = QWidget()
