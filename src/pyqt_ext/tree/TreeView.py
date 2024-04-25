@@ -60,7 +60,7 @@ class TreeView(QTreeView):
         model: AbstractTreeModel = self.model()
         if model is None:
             return []
-        indexes: list[QModelIndex] = self.selectionModel().selectedIndexes()
+        indexes: list[QModelIndex] = self.selectionModel().selectedRows()
         items: list[AbstractTreeItem] = [model.itemFromIndex(index) for index in indexes]
         return items
     
