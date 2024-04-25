@@ -4,16 +4,18 @@
 from qtpy.QtGui import QColor
 
 
-ColorType = str | tuple[int | float] | list[int | float] | QColor
+ColorType = str | tuple[int | float] | list[int | float] | QColor | None
 
 
-def toQColor(color: ColorType, name_map: dict[str, QColor] = None) -> QColor:
+def toQColor(color: ColorType, name_map: dict[str, ColorType] = None) -> QColor:
+    if color is None:
+        return QColor('transparent')
     if isinstance(color, QColor):
         return color
     if isinstance(color, str):
         color = color.strip()
         if (name_map is not None) and (color in name_map):
-            return name_map[color]
+            return toQColor(name_map[color])
         elif QColor.isValidColorName(color):
             return QColor(color)
         else:
@@ -31,6 +33,8 @@ def toQColor(color: ColorType, name_map: dict[str, QColor] = None) -> QColor:
 
 
 def toColorStr(color: ColorType) -> str:
+    if color is None:
+        return None
     if isinstance(color, QColor):
         # (r,g,b,a) in [0,255]
         return f'({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})'
