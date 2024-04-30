@@ -55,7 +55,7 @@ def customTreeExample():
     # Create the application
     app = QApplication()
 
-    print('Build the tree...')
+    print('\nBuild the tree...')
     root = CustomTreeItem()
     CustomTreeItem(data=82, parent=root)
     root.append_child(CustomTreeItem(data=[1, 2, 3], name='child2'))
@@ -66,7 +66,7 @@ def customTreeExample():
     CustomTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
     print(root)
 
-    print('Depth first iteration...')
+    print('\nDepth first iteration...')
     for item in root.depth_first():
         print(item.name)
     
@@ -88,6 +88,10 @@ def customTreeExample():
 
     # Run the application...
     app.exec()
+
+    # print the final tree...
+    print('\nFinal tree...')
+    print(root)
 
 
 if __name__ == '__main__':

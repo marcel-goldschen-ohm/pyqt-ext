@@ -22,7 +22,7 @@ def keyValueTreeExample():
         },
     }
 
-    print('Build the tree...')
+    print('\nBuild the tree...')
     root = KeyValueTreeItem('/', data)
     print(root)
     
@@ -38,6 +38,10 @@ def keyValueTreeExample():
 
     # Run the application...
     app.exec()
+
+    # print the final tree...
+    print('\nFinal tree...')
+    print(root)
 
 
 if __name__ == '__main__':

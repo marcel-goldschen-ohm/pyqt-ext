@@ -32,7 +32,7 @@ def colorButtonExample():
     # Run the application
     app.exec()
 
-    print('Final color selections:')
+    print('\nFinal color selections:')
     print(f'red -> {redButton.color()}')
     print(f'transparentGreen -> {transparentGreenButton.color()}')
     print(f'blue -> {blueButton.color()}')
