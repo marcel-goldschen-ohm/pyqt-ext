@@ -22,9 +22,14 @@ class MultiValueSpinBox(QAbstractSpinBox):
     def __init__(self, *args, **kwargs):
         QAbstractSpinBox.__init__(self, *args, **kwargs)
 
-        self._indices: np.ndarray[int] = np.array([0], dtype=int)
+        # possible values to select from
         self._indexed_values: np.ndarray = np.arange(100)
 
+        # indices of selected values in self._indexed_values
+        # i.e., selected values are self._indexed_values[self._indices]
+        self._indices: np.ndarray[int] = np.array([0], dtype=int)
+
+        # initialize with default values
         self.setIndices(self._indices)
 
         self.setSizePolicy(QSizePolicy.Expanding, self.sizePolicy().verticalPolicy())
@@ -109,7 +114,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
         if text == '':
             return np.array([0])
         if text == ':':
-            return np.arange(len(self._indexed_values))
+            return self._indexed_values
         fields = re.split(r'[,\s]+', text)
         values = []
         dtype = self._indexed_values.dtype.type
@@ -119,61 +124,21 @@ class MultiValueSpinBox(QAbstractSpinBox):
                 if field == '':
                     continue
                 if field == ':':
-                    return np.arange(len(self._indexed_values))
-                if ':' in field:
-                    slice_args = [dtype(arg) if len(arg.strip()) else None for arg in field.split(':')]
-                    if np.issubdtype(self._indexed_values.dtype, np.integer):
-                        slice_obj = slice(*slice_args)
-                        slice_indices = list(range(*slice_obj.indices(len(self._indexed_values))))
-                        values.extend(slice_indices)
-                    elif np.issubdtype(self._indexed_values.dtype, np.floating):
-                        if len(slice_args) == 1:
-                            first = slice_args[0]
-                            i: int = np.searchsorted(self._indexed_values, first, side='left')
-                            values.extend(self._indexed_values[i:].tolist())
-                        elif len(slice_args) == 2:
-                            first = slice_args[0]
-                            last = slice_args[1]
-                            i: int = np.searchsorted(self._indexed_values, first, side='left')
-                            j: int = i + 1 + np.searchsorted(self._indexed_values[i+1:], last, side='right')
-                            if j > i:
-                                values.extend(self._indexed_values[i:j].tolist())
+                    return self._indexed_values
+                if ':' in field or '-' in field:
+                    # first:last or first-last inclusive
+                    delimeter = ':' if ':' in field else '-'
+                    first, last = [dtype(arg) if len(arg.strip()) else None for arg in field.split(delimeter)]
+                    if first is None:
+                        start_index: int = 0
                     else:
-                        # do not assume values are ordered if not integer or floating point
-                        if len(slice_args) == 1:
-                            first = slice_args[0]
-                            try:
-                                i: int = np.where(self._indexed_values == first)[0][0]
-                                values.extend(self._indexed_values[i:].tolist())
-                            except:
-                                pass
-                        elif len(slice_args) == 2:
-                            first = slice_args[0]
-                            last = slice_args[1]
-                            try:
-                                i: int = np.where(self._indexed_values == first)[0][0]
-                                j: int = i + 1 + np.where(self._indexed_values[i+1:] == last)[0][0] + 1
-                                values.extend(self._indexed_values[i:j].tolist())
-                            except:
-                                pass
-                elif '-' in field:
-                    first, last = field.split('-')
-                    first, last = dtype(first), dtype(last)
-                    if np.issubdtype(self._indexed_values.dtype, np.integer):
-                        values.extend(list(range(int(first), int(last) + 1)))
-                    elif np.issubdtype(self._indexed_values.dtype, np.floating):
-                        i: int = np.searchsorted(self._indexed_values, first, side='left')
-                        j: int = i + 1 + np.searchsorted(self._indexed_values[i+1:], last, side='right')
-                        if j > i:
-                            values.extend(self._indexed_values[i:j].tolist())
+                        start_index: int = self.indicesFromValues([first])[0]
+                    if last is None:
+                        stop_index: int = len(self._indexed_values)
                     else:
-                        # do not assume values are ordered if not integer or floating point
-                        try:
-                            i: int = np.where(self._indexed_values == first)[0][0]
-                            j: int = i + 1 + np.where(self._indexed_values[i+1:] == last)[0][0] + 1
-                            values.extend(self._indexed_values[i:j].tolist())
-                        except:
-                            pass
+                        stop_index: int = self.indicesFromValues([last])[0] + 1
+                    if stop_index > start_index:
+                        values.extend(self._indexed_values[start_index:stop_index].tolist())
                 else:
                     value = dtype(field)
                     values.append(value)
