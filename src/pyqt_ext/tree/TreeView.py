@@ -56,11 +56,13 @@ class TreeView(QTreeView):
         QTreeView.selectionChanged(self, selected, deselected)
         self.selectionWasChanged.emit()
 
-    def selectedItems(self) -> list[AbstractTreeItem]:
+    def selectedItems(self, column: int | None = 0) -> list[AbstractTreeItem]:
         model: AbstractTreeModel = self.model()
         if model is None:
             return []
-        indexes: list[QModelIndex] = self.selectionModel().selectedRows()
+        indexes: list[QModelIndex] = self.selectionModel().selectedIndexes()
+        if column is not None:
+            indexes = [index for index in indexes if index.column() == column]
         items: list[AbstractTreeItem] = [model.itemFromIndex(index) for index in indexes]
         return items
     
