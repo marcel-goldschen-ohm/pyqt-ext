@@ -38,7 +38,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
 
         self.setToolTip('index/slice (+Shift: page up/down)')
 
-        # self.setPlaceholderText(self.textFromValues(self._indexed_values))
+        self.lineEdit().setPlaceholderText(self.textFromValues(self._indexed_values))
     
     def indices(self) -> np.ndarray[int]:
         mask = (0 <= self._indices) & (self._indices < len(self._indexed_values))
@@ -69,7 +69,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
             values = np.array(values, dtype=dtype)
         self._indexed_values = values
         self.setIndices(self.indices())
-        # self.setPlaceholderText(self.textFromValues(self._indexed_values))
+        self.lineEdit().setPlaceholderText(self.textFromValues(self._indexed_values))
     
     def selectedValues(self) -> np.ndarray:
         return self._indexed_values[self.indices()]
@@ -125,10 +125,9 @@ class MultiValueSpinBox(QAbstractSpinBox):
                     continue
                 if field == ':':
                     return self._indexed_values
-                if ':' in field or '-' in field:
-                    # first:last or first-last inclusive
-                    delimeter = ':' if ':' in field else '-'
-                    first, last = [dtype(arg) if len(arg.strip()) else None for arg in field.split(delimeter)]
+                if ':' in field:
+                    # first:last inclusive
+                    first, last = [dtype(arg) if len(arg.strip()) else None for arg in field.split(':')]
                     if first is None:
                         start_index: int = 0
                     else:
@@ -176,7 +175,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
                 else:
                     first_value_text = str(first_value)
                     last_value_text = str(last_value)
-                texts.append(first_value_text + '-' + last_value_text)
+                texts.append(first_value_text + ':' + last_value_text)
         text = ','.join(texts)
         return text
     
