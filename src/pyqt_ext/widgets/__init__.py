@@ -1,3 +1,4 @@
 from pyqt_ext.widgets.ColorButton import ColorButton
 from pyqt_ext.widgets.CollapsibleSection import CollapsibleSection
 from pyqt_ext.widgets.MultiValueSpinBox import MultiValueSpinBox
+from pyqt_ext.widgets.TableWidgetWithCopyPaste import TableWidgetWithCopyPaste
