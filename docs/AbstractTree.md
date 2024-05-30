@@ -85,13 +85,13 @@ for item in root.depth_first():
     print(item.name)
 ```
 ```shell
-CustomTreeItem@4386639984: None
-CustomTreeItem@4386640032: 82
-child3: 3.14
-CustomTreeItem@4386645360: some cool data
-child2: [1, 2, 3]
-grandchild2: False
-greatgrandchild: None
+CustomTreeItem@4386639984
+CustomTreeItem@4386640032
+child3
+CustomTreeItem@4386645360
+child2
+grandchild2
+greatgrandchild
 ```
 
 Custom tree model with drag-and-drop derived from [AbstractDndTreeModel](#abstractdndtreemodel) for an editable tree with two columns: name, data...

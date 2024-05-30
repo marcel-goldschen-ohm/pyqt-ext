@@ -82,9 +82,8 @@ class AbstractTreeModel(QAbstractItemModel):
             return 0
         return len(parent_item.children)
 
-    # !!! not implemented
+    # !!! must reimplement if you need more than one column
     def columnCount(self, parent_index: QModelIndex = QModelIndex()) -> int:
-        # raise NotImplementedError
         # Defaults to a single column tree.
         return 1
 
@@ -114,9 +113,7 @@ class AbstractTreeModel(QAbstractItemModel):
         parent_item: AbstractTreeItem = item.parent
         if parent_item is None or parent_item is self.root():
             return QModelIndex()
-        row: int = parent_item.sibling_index
-        col: int = 0
-        return self.createIndex(row, col, parent_item)
+        return self.indexFromItem(parent_item)
 
     def index(self, row: int, column: int, parent_index: QModelIndex = QModelIndex()) -> QModelIndex:
         """ Return an index associated with the appropriate AbstractTreeItem.
@@ -183,7 +180,9 @@ class AbstractTreeModel(QAbstractItemModel):
                 labels = self.rowLabels()
             if section < len(labels):
                 return labels[section]
-            return section
+            if orientation == Qt.Orientation.Vertical:
+                return section
+            return None
 
     def setHeaderData(self, section: int, orientation: Qt.Orientation, value, role: int) -> bool:
         """ Set data in `rowLabels` or `columnLabels`.
@@ -235,8 +234,7 @@ class AbstractTreeModel(QAbstractItemModel):
         if parent_item is None:
             # cannot remove the root item
             return False
-        parent_row: int = parent_item.sibling_index
-        parent_index: QModelIndex = self.createIndex(parent_row, 0, parent_item)
+        parent_index: QModelIndex = self.indexFromItem(parent_item)
         item_row: int = item.sibling_index
         return self.removeRows(item_row, 1, parent_index)
     

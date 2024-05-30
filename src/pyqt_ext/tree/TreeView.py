@@ -154,21 +154,26 @@ class TreeView(QTreeView):
         # print('dragEnterEvent   ', event.mimeData().formats(), event.possibleActions())
         index: QModelIndex = event.source().currentIndex()
         if index.isValid() and index != QModelIndex():
-            self._src_index = index
             event.accept()
         else:
             event.ignore()
     
     def dropEvent(self, event: QDropEvent):
-        src_index: QModelIndex = getattr(self, '_src_index', None)
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            event.ignore()
+            return
+        
+        src_index: QModelIndex = event.source().currentIndex()
         if (src_index is None) or (not src_index.isValid()) or (src_index == QModelIndex()):
             event.ignore()
             return
-        dst_index: QModelIndex = self.indexAt(event.pos())
         
-        model: AbstractTreeModel = self.model()
-        src_parent_index: QModelIndex = model.parent(src_index)
-        src_row = src_index.row()
+        dst_index: QModelIndex = self.indexAt(event.pos())
+        if (dst_index is None):
+            event.ignore()
+            return
+        
         dst_parent_index: QModelIndex = model.parent(dst_index)
         dst_row = dst_index.row()
 
@@ -184,9 +189,21 @@ class TreeView(QTreeView):
         elif drop_pos == QAbstractItemView.DropIndicatorPosition.BelowItem:
             dst_row += 1
         
-        if event.dropAction() == Qt.DropAction.MoveAction:
-            model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
-        else:
+        src_indices: list[QModelIndex] = [index for index in self.selectionModel().selectedIndexes() if index.column() == 0]
+        num_moved: int = 0
+        # handle in reverse so rows are not invalidated
+        for src_index in reversed(src_indices):
+            if (src_index is None) or (not src_index.isValid()) or (src_index == QModelIndex()):
+                continue
+        
+            src_parent_index: QModelIndex = model.parent(src_index)
+            src_row = src_index.row()
+        
+            if event.dropAction() == Qt.DropAction.MoveAction:
+                model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
+                num_moved += 1
+        
+        if num_moved == 0:
             event.ignore()
             return
 
@@ -212,7 +229,7 @@ class TreeView(QTreeView):
         for item in model.root().depth_first():
             if item is model.root():
                 continue
-            index: QModelIndex = model.createIndex(item.sibling_index, 0, item)
+            index: QModelIndex = model.indexFromItem(item)
             path = item.path
             self._state[path] = {
                 'expanded': self.isExpanded(index),
@@ -230,7 +247,7 @@ class TreeView(QTreeView):
         for item in model.root().depth_first():
             if item is model.root():
                 continue
-            index: QModelIndex = model.createIndex(item.sibling_index, 0, item)
+            index: QModelIndex = model.indexFromItem(item)
             path = item.path
             if path in self._state:
                 isExpanded = self._state[path].get('expanded', False)
@@ -262,7 +279,7 @@ def test_live():
     
     model = AbstractDndTreeModel(root)
     view = TreeView()
-    # view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+    view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
     view.setModel(model)
     view.show()
     view.resize(QSize(600, 600))

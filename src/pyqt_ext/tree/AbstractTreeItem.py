@@ -316,6 +316,7 @@ class AbstractTreeItem():
             if next_sibling is not None:
                 return next_sibling
             item = item.parent
+        return None
 
     def _prev_depth_first(self) -> AbstractTreeItem | None:
         prev_sibling: AbstractTreeItem = self.prev_sibling
@@ -323,6 +324,7 @@ class AbstractTreeItem():
             return prev_sibling._last_depth_first()
         if self.parent is not None:
             return self.parent
+        return None
     
     def _last_depth_first(self) -> AbstractTreeItem:
         item: AbstractTreeItem = self
@@ -376,7 +378,7 @@ class AbstractTreeItem():
         # raise NotImplementedError
         if column == 0:
             # for debugging
-            return repr(self)
+            return self.name
     
     def set_data(self, column: int, value) -> bool:
         # raise NotImplementedError
