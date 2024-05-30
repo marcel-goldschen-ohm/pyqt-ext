@@ -22,19 +22,23 @@ class KeyValueTreeView(TreeView):
         model: KeyValueTreeModel = self.model()
         if not index.isValid():
             if model.root() is not None and not model.root().children:
-                menu.addSeparator()
-                menu.addMenu(self._insertMenu(parentIndex=QModelIndex(), row=0, title='Add'))
+                action = menu.addSeparator()
+                menu.insertAction(menu.actions()[6], action)
+                action = menu.addAction('Add item', lambda model=model, row=0, item=KeyValueTreeItem('New item', ''), parentIndex=QModelIndex(): model.insertItems(row, [item], parentIndex))
+                menu.insertAction(menu.actions()[7], action)
             return menu
         
         item: KeyValueTreeItem = model.itemFromIndex(index)
-        menu.addSeparator()
-        menu.addAction('Insert before', lambda model=model, row=item.sibling_index, item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
-        menu.addAction('Insert after', lambda model=model, row=item.sibling_index + 1, item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
+        action = menu.addSeparator()
+        menu.insertAction(menu.actions()[6], action)
+        action = menu.addAction('Insert before', lambda model=model, row=item.sibling_index, item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
+        menu.insertAction(menu.actions()[7], action)
+        action = menu.addAction('Insert after', lambda model=model, row=item.sibling_index + 1, item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
+        menu.insertAction(menu.actions()[8], action)
         if item.is_container():
-            menu.addAction('Append child', lambda model=model, row=len(item.children), item=KeyValueTreeItem('New item', ''), parentIndex=index: model.insertItems(row, [item], parentIndex))
+            action = menu.addAction('Append child', lambda model=model, row=len(item.children), item=KeyValueTreeItem('New item', ''), parentIndex=index: model.insertItems(row, [item], parentIndex))
+            menu.insertAction(menu.actions()[9], action)
         
-        menu.addSeparator()
-        menu.addAction('Delete', lambda item=item: self.askToRemoveItem(item))
         return menu
     
     def askToRemoveItem(self, item: KeyValueTreeItem):
