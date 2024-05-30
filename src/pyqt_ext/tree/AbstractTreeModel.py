@@ -179,10 +179,10 @@ class AbstractTreeModel(QAbstractItemModel):
             elif orientation == Qt.Orientation.Vertical:
                 labels = self.rowLabels()
             if section < len(labels):
-                return labels[section]
-            if orientation == Qt.Orientation.Vertical:
-                return section
-            return None
+                label = labels[section]
+                if label is not None:
+                    return label
+            return section
 
     def setHeaderData(self, section: int, orientation: Qt.Orientation, value, role: int) -> bool:
         """ Set data in `rowLabels` or `columnLabels`.
