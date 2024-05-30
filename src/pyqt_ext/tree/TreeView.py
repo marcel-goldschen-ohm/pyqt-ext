@@ -75,26 +75,33 @@ class TreeView(QTreeView):
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
         menu: QMenu = QMenu(self)
-        menu.addAction('Expand all', self.expandAll)
-        menu.addAction('Collapse all', self.collapseAll)
-        menu.addAction('Resize columns to contents', self.resizeAllColumnsToContents)
-        if self.selectionMode() in [QAbstractItemView.ContiguousSelection, QAbstractItemView.ExtendedSelection, QAbstractItemView.MultiSelection]:
-            menu.addSeparator()
-            menu.addAction('Select all', self.selectAll)
-            menu.addAction('Clear selection', self.clearSelection)
+
         items = self.selectedItems()
         if index.isValid():
-            menu.addSeparator()
             item: AbstractTreeItem = self.model().itemFromIndex(index)
             label = item.path
             if len(label) > 50:
                 label = '...' + label[-47:]
-            menu.addAction(f'Remove {label}', lambda item=item: self.askToRemoveItem(item))
+            item_menu = QMenu(label)
+            item_menu.addAction('Delete', lambda self=self, item=item, label=label: self.askToRemoveItem(item, label))
+            menu.addMenu(item_menu)
+            menu.addSeparator()
             if item in items:
                 items.remove(item)
+        
+        menu.addAction('Expand all', self.expandAll)
+        menu.addAction('Collapse all', self.collapseAll)
+        menu.addAction('Resize columns to contents', self.resizeAllColumnsToContents)
+        
+        if self.selectionMode() in [QAbstractItemView.ContiguousSelection, QAbstractItemView.ExtendedSelection, QAbstractItemView.MultiSelection]:
+            menu.addSeparator()
+            menu.addAction('Select all', self.selectAll)
+            menu.addAction('Clear selection', self.clearSelection)
+        
         if len(items) > 0:
             menu.addSeparator()
             menu.addAction('Remove all selected items', self.removeSelectedItems)
+        
         return menu
     
     def expandAll(self):
