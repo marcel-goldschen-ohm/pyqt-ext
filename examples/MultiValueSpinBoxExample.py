@@ -9,7 +9,7 @@ def print_indices_and_values(spinbox: MultiValueSpinBox):
     print('selected_values:', spinbox.selectedValues())
 
 
-def multiValueSpinBoxExample():
+def example():
     # Create the application
     app = QApplication()
 
@@ -64,4 +64,4 @@ def multiValueSpinBoxExample():
 
 
 if __name__ == '__main__':
-    multiValueSpinBoxExample()
+    example()

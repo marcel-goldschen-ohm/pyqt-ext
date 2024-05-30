@@ -3,14 +3,14 @@ from PySide6.QtWidgets import QApplication
 from pyqt_ext.tree import KeyValueTreeItem, KeyValueDndTreeModel, KeyValueTreeView
 
 
-def keyValueTreeExample():
+def example():
     # Create the application
     app = QApplication()
 
     # (key, value) data hierarchy...
     data = {
         'a': 1,
-        'b': [4, 8, 9, 5, 7, 99],
+        'b': [4, 8, (1, True, 'good'), 5, 7, 99],
         'c': {
             'me': 'hi',
             3: 67,
@@ -45,4 +45,4 @@ def keyValueTreeExample():
 
 
 if __name__ == '__main__':
-    keyValueTreeExample()
+    example()

@@ -4,7 +4,7 @@ from qtpy.QtGui import QColor
 from pyqt_ext.widgets import ColorButton
 
 
-def colorButtonExample():
+def example():
     # Create the application
     app = QApplication()
 
@@ -40,4 +40,4 @@ def colorButtonExample():
 
 
 if __name__ == '__main__':
-    colorButtonExample()
+    example()

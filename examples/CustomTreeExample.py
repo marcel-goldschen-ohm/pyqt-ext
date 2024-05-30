@@ -51,7 +51,7 @@ class CustomDndTreeModel(AbstractDndTreeModel):
         return 2
 
 
-def customTreeExample():
+def example():
     # Create the application
     app = QApplication()
 
@@ -95,4 +95,4 @@ def customTreeExample():
 
 
 if __name__ == '__main__':
-    customTreeExample()
+    example()
