@@ -124,6 +124,21 @@ class TreeView(QTreeView):
             model: AbstractTreeModel = self.model()
             model.removeItem(item)
     
+    def removeSelectedItems(self, ask_before_removing: bool = True):
+        items: list[AbstractTreeItem] = self.selectedItems()
+        if not items:
+            return
+        if ask_before_removing:
+            answer = QMessageBox.question(self, 'Remove', f'Remove selected items?', 
+                buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+                defaultButton=QMessageBox.StandardButton.No
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+        model: AbstractTreeModel = self.model()
+        for item in reversed(items):
+            model.removeItem(item)
+    
     def eventFilter(self, obj: QObject, event: QEvent):
         if event.type() == QEvent.Wheel:
             modifiers: Qt.KeyboardModifier = event.modifiers()
