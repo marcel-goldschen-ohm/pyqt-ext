@@ -275,7 +275,6 @@ def test_live():
     root.children[-1].append_child(AbstractTreeItem())
     root.children[-1].children[0].append_child(AbstractTreeItem())
     root.children[-1].children[0].append_child(AbstractTreeItem())
-    # root.dump()
     
     model = AbstractDndTreeModel(root)
     view = TreeView()
