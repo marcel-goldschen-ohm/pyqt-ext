@@ -35,7 +35,7 @@ class TreeView(QTreeView):
         QTreeView.setModel(self, model)
 
         # drag and drop?
-        is_dnd: bool = model.supportedDropActions() != Qt.DropAction.IgnoreAction
+        is_dnd: bool = model is not None and model.supportedDropActions() != Qt.DropAction.IgnoreAction
         self.setDragEnabled(is_dnd)
         self.setAcceptDrops(is_dnd)
         self.viewport().setAcceptDrops(is_dnd)

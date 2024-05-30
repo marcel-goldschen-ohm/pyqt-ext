@@ -20,6 +20,9 @@ class KeyValueTreeView(TreeView):
         menu: QMenu = TreeView.contextMenu(self, index)
        
         model: KeyValueTreeModel = self.model()
+        if model is None:
+            return menu
+        
         if not index.isValid():
             if model.root() is not None:
                 menu.addSeparator()
