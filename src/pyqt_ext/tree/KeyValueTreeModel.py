@@ -25,24 +25,29 @@ class KeyValueTreeModel(AbstractTreeModel):
                 return Qt.ItemFlag.ItemIsDropEnabled
             return Qt.ItemFlag.NoItemFlags
         item: KeyValueTreeItem = self.itemFromIndex(index)
-        if (index.column() == 1) and item.is_container():
-            # cannot edit container value, only the values of items inside it
-            flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-        else:
-            flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
+        # if (index.column() == 1) and item.is_container():
+        #     # cannot edit container value, only the values of items inside it
+        #     flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
+        # else:
+        flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
             flags |= Qt.ItemFlag.ItemIsDragEnabled
             if item.is_container():
                 flags |= Qt.ItemFlag.ItemIsDropEnabled
+        # data = self.data(index, Qt.ItemDataRole.DisplayRole)
+        # if isinstance(data, bool):
+        #     flags |= Qt.ItemFlag.ItemIsUserCheckable
         return flags
 
     def data(self, index: QModelIndex, role: int):
         if not index.isValid():
-            return
+            return None
         item: KeyValueTreeItem = self.itemFromIndex(index)
-        if item is None:
-            return
-        if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
+        if role == Qt.ItemDataRole.DisplayRole:
+            if index.column() == 1 and item.is_container():
+                return None
+            return item.get_data(index.column())
+        elif role == Qt.ItemDataRole.EditRole:
             return item.get_data(index.column())
         elif role == Qt.ItemDataRole.DecorationRole:
             if index.column() == 0:
@@ -52,11 +57,7 @@ class KeyValueTreeModel(AbstractTreeModel):
                     return qta.icon('ph.list-numbers-thin')
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
-        if not index.isValid():
-            return False
         item: KeyValueTreeItem = self.itemFromIndex(index)
-        if item is None:
-            return False
         if role == Qt.ItemDataRole.EditRole:
             return item.set_data(index.column(), value)
         return False

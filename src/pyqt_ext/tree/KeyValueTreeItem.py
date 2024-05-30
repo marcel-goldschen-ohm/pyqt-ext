@@ -62,12 +62,26 @@ class KeyValueTreeItem(AbstractTreeItem):
     
     @value.setter
     def value(self, value) -> None:
+        # remove any children
+        children = self.children.copy()
+        for child in children:
+            self.remove_child(child)
+
         # update parent dict or list
         if self.parent is not None:
             if self.parent.is_dict() or self.parent.is_list():
                 self.parent.value[self.key] = value
         # update local value
         self._value = value
+
+        # recursively build subtree if value is itself a container with key,value access
+        if isinstance(value, dict):
+            for key in value:
+                KeyValueTreeItem(key, value[key], parent=self)
+        elif isinstance(value, list):
+            for i in range(len(value)):
+                # list keys are not explicitly set, they will default to the list index
+                KeyValueTreeItem(None, value[i], parent=self)
     
     @AbstractTreeItem.parent.setter
     def parent(self, parent: KeyValueTreeItem | None) -> None:
@@ -97,6 +111,7 @@ class KeyValueTreeItem(AbstractTreeItem):
                 if self.value not in parent.value.values():
                     # resetting key will insert value into parent dict
                     self.key = str(self.key)
+                    # # ensure unique key
                     # if key in parent.value:
                     #     key = unique_name(key, list(parent.value.keys()))
                     # self._key = key
@@ -104,6 +119,8 @@ class KeyValueTreeItem(AbstractTreeItem):
             elif parent.is_list():
                 if self.value not in parent.value:
                     parent.value.append(self.value)
+        
+        self.ensure_unique_key()
     
     @AbstractTreeItem.name.getter
     def name(self) -> str:
@@ -118,6 +135,12 @@ class KeyValueTreeItem(AbstractTreeItem):
     def is_container(self):
         return self.is_dict() or self.is_list()
     
+    def ensure_unique_key(self):
+        keys = [sibling.key for sibling in self.siblings]
+        keys.pop(self.sibling_index)
+        if self.key in keys:
+            self.key = unique_name(self.key, keys)
+    
     def insert_child(self, index: int, item: KeyValueTreeItem) -> bool:
         if not AbstractTreeItem.insert_child(self, index, item):
             return False
@@ -131,8 +154,6 @@ class KeyValueTreeItem(AbstractTreeItem):
         if column == 0:
             return self.key
         elif column == 1:
-            if self.is_container():
-                return
             return self.value
     
     def set_data(self, column: int, value) -> bool:
@@ -140,8 +161,6 @@ class KeyValueTreeItem(AbstractTreeItem):
             self.key = value
             return True
         elif column == 1:
-            if self.is_container():
-                return False
             self.value = value
             return True
         return False

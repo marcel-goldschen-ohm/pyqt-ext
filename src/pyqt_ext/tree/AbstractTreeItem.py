@@ -45,7 +45,7 @@ class AbstractTreeItem():
 
         Each item is described by its name.
         """
-        return self._tree_repr(lambda item: item.name)
+        return self._tree_repr(lambda item: repr(item))
     
     def __getitem__(self, path: str) -> AbstractTreeItem:
         """ Return item at path either from the root item (if path starts with /) or otherwise from this item.
