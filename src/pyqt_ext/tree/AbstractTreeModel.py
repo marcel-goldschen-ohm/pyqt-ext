@@ -271,11 +271,13 @@ class AbstractTreeModel(QAbstractItemModel):
         row = self.rowCount(parent_index)
         return self.insertItems(row, items, parent_index)
     
-    # !!! not implemented
     def moveRows(self, src_parent_index: QModelIndex, src_row: int, count: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
-        """ See `moveRow` instead.
+        """ !!! For now this is non-optimial and just repeatedly calls `moveRow` one item at a time.
         """
-        return False
+        n_moved: int = 0
+        for i in reversed(list(range(src_row, src_row + count))):
+            n_moved += self.moveRow(src_parent_index, i, dst_parent_index, dst_row)
+        return n_moved > 0
     
     def moveRow(self, src_parent_index: QModelIndex, src_row: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
         """ Calls `AbstractTreeItem.insert_child` to move an item (e.g., row) within the tree.
@@ -310,9 +312,9 @@ class AbstractTreeModel(QAbstractItemModel):
                 return False
 
         self.beginMoveRows(src_parent_index, src_row, src_row, dst_parent_index, dst_row)
-        success: bool = dst_parent_item.insert_child(dst_row, src_item)
+        dst_parent_item.insert_child(dst_row, src_item)
         self.endMoveRows()
-        return success
+        return True
     
     # !!! reimplement for drag-and-drop
     def supportedDropActions(self) -> Qt.DropActions:

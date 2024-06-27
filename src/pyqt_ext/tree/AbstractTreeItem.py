@@ -109,7 +109,7 @@ class AbstractTreeItem():
         Derived classes that need to mirror changes in the tree structure to their data should reimplement parent.setter.
         
         Note: Together, parent.setter and insert_child cover all needed tree restructuring.
-        See set_parent, append_child, insert_child, and remove_child.
+        See append_child, insert_child, and remove_child.
         """
         if self.parent is parent:
             # nothing to do
@@ -245,48 +245,28 @@ class AbstractTreeItem():
             item = item.parent
         return False
 
-    def set_parent(self, parent: AbstractTreeItem) -> bool:
-        try:
-            self.parent = parent
-            return True
-        except Exception as error:
-            print(error)
-            return False
+    def set_parent(self, parent: AbstractTreeItem):
+        self.parent = parent
     
-    def append_child(self, child: AbstractTreeItem) -> bool:
-        try:
-            child.parent = self
-            return True
-        except Exception as error:
-            print(error)
-            return False
+    def append_child(self, child: AbstractTreeItem):
+        child.parent = self
     
-    def insert_child(self, index: int, child: AbstractTreeItem) -> bool:
+    def insert_child(self, index: int, child: AbstractTreeItem):
         if not (0 <= index <= len(self.children)):
             return False
-        try:
-            child.parent = self
-            # move item to index
-            pos = self.children.index(child)
+        child.parent = self
+        # move item to index
+        pos = self.children.index(child)
+        if pos != index:
+            if pos < index:
+                index -= 1
             if pos != index:
-                if pos < index:
-                    index -= 1
-                if pos != index:
-                    self.children.insert(index, self.children.pop(pos))
-            return True
-        except Exception as error:
-            print(error)
-            return False
+                self.children.insert(index, self.children.pop(pos))
     
-    def remove_child(self, child: AbstractTreeItem) -> bool:
+    def remove_child(self, child: AbstractTreeItem):
         if child.parent is not self:
             return False
-        try:
-            child.parent = None
-            return True
-        except Exception as error:
-            print(error)
-            return False
+        child.parent = None
     
     # depth-first iteration --------------------------------------------------
     

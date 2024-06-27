@@ -83,7 +83,8 @@ class TreeView(QTreeView):
             if len(label) > 50:
                 label = '...' + label[-47:]
             item_menu = QMenu(label)
-            item_menu.addAction('Delete', lambda self=self, item=item, label=label: self.askToRemoveItem(item, label))
+            if index.isValid():
+                item_menu.addAction('Delete', lambda self=self, item=item, label=label: self.askToRemoveItem(item, label))
             menu.addMenu(item_menu)
             menu.addSeparator()
             if item in items:
@@ -235,8 +236,12 @@ class TreeView(QTreeView):
             src_row = src_index.row()
         
             if event.dropAction() == Qt.DropAction.MoveAction:
-                model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
-                num_moved += 1
+                if self.checkMove(src_parent_index, src_row, dst_parent_index, dst_row):
+                    try:
+                        success: bool = model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
+                        num_moved += int(success)
+                    except Exception as err:
+                        QMessageBox.warning(self, 'Move Error', f'{err}')
         
         if num_moved == 0:
             event.ignore()
@@ -253,6 +258,9 @@ class TreeView(QTreeView):
     # def canDropMimeData(self, data: QMimeData, action: Qt.DropAction, row: int, column: int, parent: QModelIndex) -> bool:
     #     print('canDropMimeData')
     #     return True
+    
+    def checkMove(self, src_parent_index: QModelIndex, src_row: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
+        return True
     
     def storeState(self):
         model: AbstractTreeModel = self.model()
