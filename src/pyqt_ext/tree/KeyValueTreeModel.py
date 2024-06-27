@@ -10,6 +10,9 @@ import qtawesome as qta
 
 
 class KeyValueTreeModel(AbstractTreeModel):
+
+    sigKeyChanged = Signal()
+    sigValueChanged = Signal()
     
     def __init__(self, root: KeyValueTreeItem = None, parent: QObject = None):
         AbstractTreeModel.__init__(self, root, parent)
@@ -59,7 +62,13 @@ class KeyValueTreeModel(AbstractTreeModel):
     def setData(self, index: QModelIndex, value, role: int) -> bool:
         item: KeyValueTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.EditRole:
-            return item.set_data(index.column(), value)
+            success: bool = item.set_data(index.column(), value)
+            if success:
+                if index.column() == 0:
+                    self.sigKeyChanged.emit()
+                elif index.column() == 1:
+                    self.sigValueChanged.emit()
+            return success
         return False
 
 
