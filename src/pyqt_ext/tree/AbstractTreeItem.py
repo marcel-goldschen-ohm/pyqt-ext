@@ -2,6 +2,7 @@
 """
 
 from __future__ import annotations
+from typing import Callable
 from collections.abc import Iterator
 
 
@@ -74,10 +75,10 @@ class AbstractTreeItem():
         """
         return self._tree_repr(lambda item: repr(item))
     
-    def _tree_repr(self, func: 'function(item) -> one line str') -> str:
+    def _tree_repr(self, func: Callable[[AbstractTreeItem], str]) -> str:
         """ Returns a multi-line string representation of this item's tree branch.
 
-        Each item is described by the str returned by func(item).
+        Each item is described by the single line str returned by func(item).
         See __str__ and dumps for examples.
         """
         items: list[AbstractTreeItem] = list(self.depth_first())

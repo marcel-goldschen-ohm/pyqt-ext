@@ -1,8 +1,12 @@
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+
 [project]
 name = "pyqt-ext"
-description = "Collection of PyQt/PySide widgets/tools"
+description = "Collection of PyQt widgets and tools"
 dynamic = ["version"]
-license = {text = "MIT"}
 authors = [
     {name = "Marcel Goldschen-Ohm", email = "goldschen-ohm@utexas.edu"},
 ]
@@ -15,7 +19,7 @@ dependencies = [
 readme = "README.md"
 keywords = ["PyQt", "PySide"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3 :: Only",
@@ -25,16 +29,22 @@ classifiers = [
 [project.urls]
 homepage = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
 repository = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
-
-
-[build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+issues = "https://github.com/marcel-goldschen-ohm/pyqt-ext/issues"
 
 
 [tool.pdm]
-package-type = "library"
+distribution = true
 
 
 [tool.pdm.version]
 source = "scm"
+
+
+[tool.pdm.dev-dependencies]
+lint = [
+    "flake8",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+]
