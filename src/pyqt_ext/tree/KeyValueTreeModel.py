@@ -1,4 +1,4 @@
-""" Tree model for key-value pairs that uses PyQtKeyValueTreeItem for its data interface.
+""" Tree model for key-value pairs that uses KeyValueTreeItem for its data interface.
 """
 
 from __future__ import annotations

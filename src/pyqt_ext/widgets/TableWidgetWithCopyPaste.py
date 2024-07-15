@@ -1,4 +1,4 @@
-""" PySide/PyQt button for selecting and displaying a color.
+""" PySide/PyQt table widget with copy/paste.
 """
 
 from qtpy.QtCore import *

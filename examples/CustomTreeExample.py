@@ -1,6 +1,6 @@
 from __future__ import annotations
 from qtpy.QtWidgets import QApplication
-from qtpy.QtCore import QModelIndex
+from qtpy.QtCore import QObject, QModelIndex
 from pyqt_ext.tree import AbstractTreeItem, AbstractDndTreeModel, TreeView
 
 

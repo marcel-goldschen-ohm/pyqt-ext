@@ -1,4 +1,4 @@
-""" Widget for editing the style of graph data.
+""" Data interface and widgets for storing/editing the style of a graph.
 
 Style is stored in hashable dict.
 """

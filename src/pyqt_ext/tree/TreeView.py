@@ -1,4 +1,4 @@
-""" Base class for a tree view of an AbstractTreeModel with context menu and mouse wheel expand/collapse.
+""" Tree view for an AbstractTreeModel with context menu and mouse wheel expand/collapse.
 """
 
 from __future__ import annotations
@@ -9,7 +9,7 @@ from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel
 
 
 class TreeView(QTreeView):
-    """ Base class for a tree view with context menu and mouse wheel expand/collapse.
+    """ Tree view for an AbstractTreeModel with context menu and mouse wheel expand/collapse.
     """
 
     selectionWasChanged = Signal()
