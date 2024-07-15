@@ -1,6 +1,8 @@
 # pyqt-ext
 Collection of PyQt/PySide widgets/tools.
 
+![package workflow](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/python-package.yml/badge.svg)
+
 In addition to being useful out-of-the-box, you may find these tools to be helpful templates for rolling your own custom widgets.
 
 - `graph/`
