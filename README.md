@@ -2,9 +2,10 @@
 Collection of PyQt/PySide widgets/tools.
 
 ![GitHub Tag](https://img.shields.io/github/v/tag/marcel-goldschen-ohm/pyqt-ext?cacheSeconds=1)
-![tests](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/build-test.yml/badge.svg)
+![build-test](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/build-test.yml/badge.svg)
 
 ![GitHub Release](https://img.shields.io/github/v/release/marcel-goldschen-ohm/pyqt-ext?include_prereleases&cacheSeconds=1)
+![publish](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/publish.yml/badge.svg)
 
 In addition to being useful out-of-the-box, you may find these tools to be helpful templates for rolling your own custom widgets.
 
