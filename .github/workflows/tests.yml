@@ -2,12 +2,12 @@ name: tests
 
 on:
   push:
-    branches: [ "main" ]
+    tags: [ "**" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  build:
+  run_tests:
 
     runs-on: ${{ matrix.os }}
     strategy:

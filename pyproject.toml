@@ -5,7 +5,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "pyqt-ext"
-description = "Collection of PyQt widgets and tools"
+description = "Collection of PyQt/PySide widgets/tools"
 dynamic = ["version"]
 authors = [
     {name = "Marcel Goldschen-Ohm", email = "goldschen-ohm@utexas.edu"},
