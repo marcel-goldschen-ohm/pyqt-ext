@@ -1,7 +1,7 @@
 # pyqt-ext
 Collection of PyQt/PySide widgets/tools.
 
-![package workflow](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/python-package.yml/badge.svg)
+![tests](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/tests.yml/badge.svg)
 
 In addition to being useful out-of-the-box, you may find these tools to be helpful templates for rolling your own custom widgets.
 
@@ -18,7 +18,7 @@ In addition to being useful out-of-the-box, you may find these tools to be helpf
     - [Multi-value spinbox](docs/MultiValueSpinBox.md)
 
 # Install
-Should work with PySide6, PyQt6, or PyQt5.
+Requires a PyQt package. Should work with PySide6, PyQt6, or PyQt5.
 ```shell
 pip install PySide6 pyqt-ext
 ```
