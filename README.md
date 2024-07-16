@@ -2,7 +2,7 @@
 Collection of PyQt/PySide widgets/tools.
 
 ![GitHub Tag](https://img.shields.io/github/v/tag/marcel-goldschen-ohm/pyqt-ext)
-![tests](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/tests.yml/badge.svg)
+![tests](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/build-test.yml/badge.svg)
 
 ![GitHub Release](https://img.shields.io/github/v/release/marcel-goldschen-ohm/pyqt-ext)
 
