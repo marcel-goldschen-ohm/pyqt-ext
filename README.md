@@ -7,6 +7,26 @@ Collection of PyQt/PySide widgets/tools.
 ![GitHub Release](https://img.shields.io/github/v/release/marcel-goldschen-ohm/pyqt-ext?include_prereleases&cacheSeconds=1)
 ![publish](https://github.com/marcel-goldschen-ohm/pyqt-ext/actions/workflows/publish.yml/badge.svg)
 
+- [Install](#install)
+- [Documentation](#documentation)
+
+## Install
+Requires a PyQt package. Should work with PySide6, PyQt6, or PyQt5.
+```shell
+pip install PySide6
+```
+Install latest release version:
+```shell
+pip install pyqt-ext
+```
+Or install latest development version:
+```shell
+pip install pyqt-ext@git+https://github.com/marcel-goldschen-ohm/pyqt-ext
+```
+
+## Documentation
+:construction:
+
 In addition to being useful out-of-the-box, you may find these tools to be helpful templates for rolling your own custom widgets.
 
 - `graph/`
@@ -20,17 +40,3 @@ In addition to being useful out-of-the-box, you may find these tools to be helpf
     - Collapsible section
     - [Color selection button](docs/ColorButton.md)
     - [Multi-value spinbox](docs/MultiValueSpinBox.md)
-
-# Install
-Requires a PyQt package. Should work with PySide6, PyQt6, or PyQt5.
-```shell
-pip install PySide6
-```
-Install latest release version:
-```shell
-pip install pyqt-ext
-```
-Or install latest development version:
-```shell
-pip install pyqt-ext@git+https://github.com/marcel-goldschen-ohm/pyqt-ext
-```
