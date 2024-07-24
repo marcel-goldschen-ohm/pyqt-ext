@@ -136,8 +136,9 @@ class KeyValueTreeItem(AbstractTreeItem):
         return self.is_dict() or self.is_list()
     
     def ensure_unique_key(self):
-        keys = [sibling.key for sibling in self.siblings]
-        keys.pop(self.sibling_index)
+        if self.parent is None:
+            return
+        keys = [sibling.key for sibling in self.parent.children if sibling is not self]
         if self.key in keys:
             self.key = unique_name(self.key, keys)
     

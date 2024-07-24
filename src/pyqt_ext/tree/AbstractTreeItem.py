@@ -92,7 +92,7 @@ class AbstractTreeItem():
                 lines[i] = '\u251C' + '\u2500'*2 + ' ' + lines[i]
             parent = item.parent
             while parent is not self:
-                if i < items.index(parent.last_sibling):
+                if i < items.index(parent.parent.last_child):
                     lines[i] = '\u2502' + ' '*3 + lines[i]
                 else:
                     lines[i] = ' '*4 + lines[i]
@@ -170,42 +170,45 @@ class AbstractTreeItem():
         if self.children:
             return self.children[-1]
 
-    @property
-    def siblings(self) -> list[AbstractTreeItem]:
-        """ Return a list of this item's siblings (inclusive of this item).
-        """
-        if self.parent is not None:
-            return self.parent.children.copy()
-        return [self]
-    
-    @property
-    def first_sibling(self) -> AbstractTreeItem:
-        """ Note: Can be this item.
-        """
-        if self.parent is not None:
-            return self.parent.first_child
-        return self
+    # There is some ambiguity as to whether the following sibling properties should be inclusive of self.
+    # To ensure clarity, I have omitted these properties for now.
 
-    @property
-    def last_sibling(self) -> AbstractTreeItem:
-        """ Note: Can be this item.
-        """
-        if self.parent is not None:
-            return self.parent.last_child
-        return self
+    # @property
+    # def siblings(self) -> list[AbstractTreeItem]:
+    #     """ Return a list of this item's siblings (inclusive of this item).
+    #     """
+    #     if self.parent is not None:
+    #         return self.parent.children.copy()
+    #     return [self]
+    
+    # @property
+    # def first_sibling(self) -> AbstractTreeItem:
+    #     """ Note: Can be this item.
+    #     """
+    #     if self.parent is not None:
+    #         return self.parent.first_child
+    #     return self
+
+    # @property
+    # def last_sibling(self) -> AbstractTreeItem:
+    #     """ Note: Can be this item.
+    #     """
+    #     if self.parent is not None:
+    #         return self.parent.last_child
+    #     return self
 
     @property
     def next_sibling(self) -> AbstractTreeItem | None:
-        siblings: list[AbstractTreeItem] = self.siblings
-        if siblings:
+        if self.parent is not None:
+            siblings: list[AbstractTreeItem] = self.parent.children
             i: int = siblings.index(self)
             if i+1 < len(siblings):
                 return siblings[i+1]
 
     @property
     def prev_sibling(self) -> AbstractTreeItem | None:
-        siblings: list[AbstractTreeItem] = self.siblings
-        if siblings:
+        if self.parent is not None:
+            siblings: list[AbstractTreeItem] = self.parent.children
             i: int = siblings.index(self)
             if i-1 >= 0:
                 return siblings[i-1]
@@ -390,9 +393,6 @@ def test_tree():
     print('\nInsert grandchild2...')
     grandchild2.parent = root['child2']
     print(root)
-
-    print('\nMore info...')
-    print(root.dumps())
 
 
 if __name__ == '__main__':
