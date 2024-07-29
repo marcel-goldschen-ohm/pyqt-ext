@@ -1,16 +1,9 @@
 # Multi-value spinbox for PyQt
+Spin box allowing multiple selected values and value ranges.
 
-# Table of contents
-- [Install](#install)
-- [Quick start example](#quick-start-example)
+<!-- - [Quick start example](#quick-start-example) -->
 
-# Install
-Should work with PySide6, PyQt6, or PyQt5.
-```shell
-pip install PySide6 pyqt-ext
-```
-
-# Quick start example
+## Quick start example
 Source code: [MultiValueSpinBoxExample.py](../examples/MultiValueSpinBoxExample.py)
 
 ```python

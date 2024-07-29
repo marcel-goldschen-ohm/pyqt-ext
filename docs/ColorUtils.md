@@ -1,17 +1,9 @@
 # Color utils for PyQt
 Utils for working with colors in PyQt.
 
-# Table of contents
-- [Install](#install)
-- [Quick start example](#quick-start-example)
+<!-- - [Quick start example](#quick-start-example) -->
 
-# Install
-Should work with PySide6, PyQt6, or PyQt5.
-```shell
-pip install PySide6 pyqt-ext
-```
-
-# Quick start example
+## Quick start example
 ```python
 from qtpy.QtGui import QColor
 from pyqt_ext.utils import toQColor, toColorStr

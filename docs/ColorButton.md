@@ -1,16 +1,9 @@
 # Color selection button for PyQt
+Button displays selected color and popup a color selection dialog.
 
-# Table of contents
-- [Install](#install)
-- [Quick start example](#quick-start-example)
+<!-- - [Quick start example](#quick-start-example) -->
 
-# Install
-Should work with PySide6, PyQt6, or PyQt5.
-```shell
-pip install PySide6 pyqt-ext
-```
-
-# Quick start example
+## Quick start example
 Source code: [ColorButtonExample.py](../examples/ColorButtonExample.py)
 
 ```python

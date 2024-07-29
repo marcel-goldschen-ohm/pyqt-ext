@@ -1,21 +1,13 @@
 # Key-Value tree model/view interface for PyQt
 Model/View implementation of a tree of (key, value) pairs that builds off of [abstract tree model/view interface](AbstractTree.md).
 
-# Table of contents
-- [Install](#install)
 - [Quick start example](#quick-start-example)
 - [KeyValueTreeItem](#keyvaluetreeitem): AbstractTreeItem with *key*, *value* data.
 - [KeyValueTreeModel](#keyvaluetreemodel): Tree model that knows how to work with `KeyValueTreeItem`s.
 - [KeyValueDndTreeModel](#keyvaluedndtreemodel): Tree model with default drag-and-drop functionality.
 - [KeyValueTreeView](#keyvaluetreeview): Tree view widget with context menu and Ctrl+Wheel expand/fold.
 
-# Install
-Should work with PySide6, PyQt6, or PyQt5.
-```shell
-pip install PySide6 pyqt-ext
-```
-
-# Quick start example
+## Quick start example
 Source code: [KeyValueTreeExample.py](../examples/KeyValueTreeExample.py)
 
 Create the application...
@@ -91,22 +83,22 @@ And voila! Try editing the data, using the context menu to insert/delete items, 
 
 <img src="images/KeyValueTreeExample.png">
 
-# KeyValueTreeItem
+## KeyValueTreeItem
 Source code: [KeyValueTreeItem.py](../src/pyqt_ext/tree/KeyValueTreeItem.py)
 
 `KeyValueTreeItem` provides an `AbstractTreeItem` with `key` and `value` properties for a tree with two columns: *key*, *value*.
 
-# KeyValueTreeModel
+## KeyValueTreeModel
 Source code: [KeyValueTreeModel.py](../src/pyqt_ext/tree/KeyValueTreeModel.py)
 
 `KeyValueTreeModel` provides a `AbstractTreeModel` interface for a tree of `KeyValueTreeItem`s with two columns: *key*, *value*.
 
-# KeyValueDndTreeModel
+## KeyValueDndTreeModel
 Source code: [KeyValueDndTreeModel.py](../src/pyqt_ext/tree/KeyValueDndTreeModel.py)
 
 Same as `KeyValueTreeModel` except that drag-and-drop is enabled (`supportedDropActions` allows `MoveAction` and `CopyAction` by default).
 
-# KeyValueTreeView
+## KeyValueTreeView
 Source code: [KeyValueTreeView.py](../src/pyqt_ext/tree/KeyValueTreeView.py)
 
 `KeyValueTreeView` provides a `TreeView` interface for a tree of `KeyValueTreeItem`s. Context menu allows inserting/deleting items.

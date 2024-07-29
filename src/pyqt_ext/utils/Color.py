@@ -8,6 +8,8 @@ ColorType = str | tuple[int | float] | list[int | float] | QColor | None
 
 
 def toQColor(color: ColorType, name_map: dict[str, ColorType] = None) -> QColor:
+    """ Convert a color object to a QColor.
+    """
     if color is None:
         return QColor('transparent')
     if isinstance(color, QColor):
@@ -33,6 +35,8 @@ def toQColor(color: ColorType, name_map: dict[str, ColorType] = None) -> QColor:
 
 
 def toColorStr(color: ColorType) -> str:
+    """ Convert a color object to a string representation of the color.
+    """
     if color is None:
         return None
     if isinstance(color, QColor):

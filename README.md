@@ -40,3 +40,4 @@ In addition to being useful out-of-the-box, you may find these tools to be helpf
     - Collapsible section
     - [Color selection button](docs/ColorButton.md)
     - [Multi-value spinbox](docs/MultiValueSpinBox.md)
+    - Table widget with copy/paste

@@ -18,13 +18,14 @@ def example():
     vbox = QVBoxLayout(ui)
 
     vbox.addWidget(QLabel('Try selecting multiple space- or comma-separated values.'))
-    vbox.addWidget(QLabel('Try selecting value ranges as first-last.'))
+    vbox.addWidget(QLabel('Try selecting value ranges as first:last.'))
+    vbox.addWidget(QLabel('Selected values (and their indices) will be printed.'))
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(list(range(10)))
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
-    vbox.addWidget(QLabel('0-9'))
+    vbox.addWidget(QLabel('0,1,2,3,4,5,6,7,8,9'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
@@ -39,14 +40,14 @@ def example():
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(np.linspace(0,1,11))
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
-    vbox.addWidget(QLabel('0.0-1.0'))
+    vbox.addWidget(QLabel('0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(['a','b','c','d','e','f'])
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
-    vbox.addWidget(QLabel('a-f'))
+    vbox.addWidget(QLabel('a,b,c,d,e,f'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
