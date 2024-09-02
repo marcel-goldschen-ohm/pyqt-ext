@@ -12,6 +12,8 @@ class TreeView(QTreeView):
     """ Tree view for an AbstractTreeModel with context menu and mouse wheel expand/collapse.
     """
 
+    CONTEXT_MENU_MAX_LABEL_LENGTH = 50
+
     selectionWasChanged = Signal()
 
     def __init__(self, parent: QObject = None) -> None:
@@ -74,14 +76,18 @@ class TreeView(QTreeView):
             menu.exec(self.viewport().mapToGlobal(point))
     
     def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            return None
+        
         menu: QMenu = QMenu(self)
 
         items = self.selectedItems()
         if index.isValid():
-            item: AbstractTreeItem = self.model().itemFromIndex(index)
+            item: AbstractTreeItem = model.itemFromIndex(index)
             label = item.path
-            if len(label) > 50:
-                label = '...' + label[-47:]
+            if len(label) > self.CONTEXT_MENU_MAX_LABEL_LENGTH:
+                label = '...' + label[-(self.CONTEXT_MENU_MAX_LABEL_LENGTH - 3):]
             item_menu = QMenu(label)
             if index.isValid():
                 item_menu.addAction('Delete', lambda self=self, item=item, label=label: self.askToRemoveItem(item, label))
@@ -92,7 +98,8 @@ class TreeView(QTreeView):
         
         menu.addAction('Expand all', self.expandAll)
         menu.addAction('Collapse all', self.collapseAll)
-        menu.addAction('Resize columns to contents', self.resizeAllColumnsToContents)
+        if model.columnCount() > 1:
+            menu.addAction('Resize columns to contents', self.resizeAllColumnsToContents)
         
         if self.selectionMode() in [QAbstractItemView.ContiguousSelection, QAbstractItemView.ExtendedSelection, QAbstractItemView.MultiSelection]:
             menu.addSeparator()
@@ -168,6 +175,11 @@ class TreeView(QTreeView):
             or Qt.KeyboardModifier.MetaModifier in modifiers:
                 self.mouseWheelEvent(event)
                 return True
+        # elif event.type() == QEvent.FocusIn:
+        #     print('FocusIn')
+        #     # self.showDropIndicator(True)
+        # elif event.type() == QEvent.FocusOut:
+        #     print('FocusOut')
         return QTreeView.eventFilter(self, obj, event)
     
     def mouseWheelEvent(self, event: QWheelEvent):
@@ -188,13 +200,37 @@ class TreeView(QTreeView):
     
     def dragEnterEvent(self, event: QDragEnterEvent):
         # print('dragEnterEvent   ', event.mimeData().formats(), event.possibleActions())
+
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            event.ignore()
+            return
+        
         index: QModelIndex = event.source().currentIndex()
         if index.isValid() and index != QModelIndex():
+            # because we have to clear a stupidly persisting drop indicator on each drop
+            self.setDropIndicatorShown(True)
+
+            # Not sure if this is needed?
+            self.storeState()
+
             event.accept()
         else:
             event.ignore()
     
+    # def dragMoveEvent(self, event: QDragMoveEvent):
+    #     # print('dragMoveEvent')
+
+    #     self.setDropIndicatorShown(True)
+    #     QTreeView.dragMoveEvent(self, event)
+    
+    def dragLeaveEvent(self, event: QDragLeaveEvent):
+        # print('dragLeaveEvent')
+        pass  # this prevents the drop indicator from being hidden
+    
     def dropEvent(self, event: QDropEvent):
+        # print('dropEvent')
+        
         model: AbstractTreeModel = self.model()
         if model is None:
             event.ignore()
@@ -226,8 +262,8 @@ class TreeView(QTreeView):
             dst_row += 1
         
         src_indices: list[QModelIndex] = [index for index in self.selectionModel().selectedIndexes() if index.column() == 0]
-        num_moved: int = 0
         # handle in reverse so rows are not invalidated
+        num_moved = 0
         for src_index in reversed(src_indices):
             if (src_index is None) or (not src_index.isValid()) or (src_index == QModelIndex()):
                 continue
@@ -240,16 +276,29 @@ class TreeView(QTreeView):
                     try:
                         success: bool = model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
                         num_moved += int(success)
+                        if success:
+                            if src_parent_index == dst_parent_index:
+                                if src_row < dst_row:
+                                    dst_row -= 1
                     except Exception as err:
                         QMessageBox.warning(self, 'Move Error', f'{err}')
-        
-        if num_moved == 0:
-            event.ignore()
-            return
 
         # We already handled the drop event, so ignore the default implementation.
-        event.setDropAction(Qt.DropAction.IgnoreAction)
-        event.accept()
+        event.ignore()
+
+        # Not sure if this is needed?
+        self.restoreState()
+        
+        # Make sure moved rows are selected.
+        self.selectionModel().clearSelection()
+        selection: QItemSelection = QItemSelection()
+        for row in range(dst_row, dst_row + num_moved):
+            index = model.index(row, 0, dst_parent_index)
+            selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+
+        # clear persisting drop indicator
+        self.setDropIndicatorShown(False)
     
     # def dropMimeData(self, index: QModelIndex, data: QMimeData, action: Qt.DropAction) -> bool:
     #     print('dropMimeData')
@@ -298,8 +347,8 @@ class TreeView(QTreeView):
                 isSelected = self._state[path].get('selected', False)
                 if isSelected:
                     selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-            else:
-                self.setExpanded(index, False)
+            # else:
+            #     self.setExpanded(index, False)
         if selection.count():
             self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
 

@@ -25,6 +25,7 @@ class GraphStyle(dict):
     'markerfacecolor': str
     """
 
+    # matched lists of string reprs and Qt.PenStyles
     linestyles = ['none', '-', '--', ':', '-.', '-..']
     penstyles = [Qt.PenStyle.NoPen, Qt.PenStyle.SolidLine, Qt.PenStyle.DashLine, Qt.PenStyle.DotLine, Qt.PenStyle.DashDotLine, Qt.PenStyle.DashDotDotLine]
 
@@ -37,7 +38,6 @@ class GraphStyle(dict):
             'ls': 'linestyle',
             'lw': 'linewidth',
             'symbol': 'marker',
-            's': 'marker',
             'm': 'marker',
             'ms': 'markersize',
             'mes': 'markeredgestyle',
