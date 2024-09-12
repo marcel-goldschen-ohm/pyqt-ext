@@ -29,10 +29,12 @@ class AbstractTreeItem():
         4. For special linkage rules you may need to reimplement `parent.setter` and `insert_child`.
     """
     
-    def __init__(self, name: str | None = None, parent: AbstractTreeItem | None = None):
-        self.name: str | None = name
-        self.parent: AbstractTreeItem | None = parent
+    def __init__(self, name: str | None = None, parent: AbstractTreeItem | None = None) -> None:
+        self._name: str | None = name
+        self._parent: AbstractTreeItem | None = None
         self.children: list[AbstractTreeItem] = []
+        if parent is not None:
+            self.parent = parent
     
     def __repr__(self) -> str:
         """ Return a single line string representation of this item.
@@ -46,7 +48,7 @@ class AbstractTreeItem():
 
         Each item is described by its name.
         """
-        return self._tree_repr(lambda item: repr(item))
+        return self._tree_repr(lambda item: item.name)
     
     def __getitem__(self, path: str) -> AbstractTreeItem:
         """ Return item at path either from the root item (if path starts with /) or otherwise from this item.
@@ -249,15 +251,16 @@ class AbstractTreeItem():
             item = item.parent
         return False
 
-    def set_parent(self, parent: AbstractTreeItem):
+    def set_parent(self, parent: AbstractTreeItem) -> None:
         self.parent = parent
     
-    def append_child(self, child: AbstractTreeItem):
+    def append_child(self, child: AbstractTreeItem) -> None:
         child.parent = self
     
-    def insert_child(self, index: int, child: AbstractTreeItem):
+    def insert_child(self, index: int, child: AbstractTreeItem) -> None:
         if not (0 <= index <= len(self.children)):
-            return False
+            raise IndexError('Index out of range.')
+        # append as last child
         child.parent = self
         # move item to index
         pos = self.children.index(child)
@@ -267,9 +270,9 @@ class AbstractTreeItem():
             if pos != index:
                 self.children.insert(index, self.children.pop(pos))
     
-    def remove_child(self, child: AbstractTreeItem):
+    def remove_child(self, child: AbstractTreeItem) -> None:
         if child.parent is not self:
-            return False
+            raise ValueError('Item is not a child of this item.')
         child.parent = None
     
     # depth-first iteration --------------------------------------------------

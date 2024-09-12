@@ -31,44 +31,6 @@ class AbstractTreeModel(QAbstractItemModel):
         self._root = root
         self.endResetModel()
     
-    def rowLabels(self) -> list:
-        return self._row_labels
-    
-    def setRowLabels(self, labels: list) -> None:
-        old_labels = self._row_labels
-        n_overlap = min(len(labels), len(old_labels))
-        first_change = 0
-        while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
-            first_change += 1
-        last_change = max(len(labels), len(old_labels)) - 1
-        while (last_change < n_overlap) and (labels[last_change] == old_labels[last_change]):
-            last_change -= 1
-        self._row_labels = labels
-        if first_change <= last_change: 
-            self.headerDataChanged.emit(Qt.Orientation.Vertical, first_change, last_change)
-    
-    def columnLabels(self) -> list | None:
-        return self._column_labels
-    
-    def setColumnLabels(self, labels: list | None) -> None:
-        old_labels = self._column_labels
-        n_overlap = min(len(labels), len(old_labels))
-        first_change = 0
-        while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
-            first_change += 1
-        last_change = max(len(labels), len(old_labels)) - 1
-        while (last_change < n_overlap) and (labels[last_change] == old_labels[last_change]):
-            last_change -= 1
-        self._column_labels = labels
-        if first_change <= last_change: 
-            self.headerDataChanged.emit(Qt.Orientation.Horizontal, first_change, last_change)
-    
-    def maxDepth(self):
-        root: AbstractTreeItem = self.root()
-        if root is None:
-            return 0
-        return root.branch_max_depth()
-    
     def rowCount(self, parent_index: QModelIndex = QModelIndex()) -> int:
         """ Uses `AbstractTreeItem.children` to get the number of children of parent.
         """
@@ -98,6 +60,54 @@ class AbstractTreeModel(QAbstractItemModel):
     def indexFromItem(self, item: AbstractTreeItem) -> QModelIndex:
         """ Get the index associated with item.
         """
+        if (item is self.root()) or (item.parent is None):
+            return QModelIndex()
+        row: int = item.sibling_index
+        col: int = 0
+        return self.createIndex(row, col, item)
+
+    def pathFromItem(self, item: AbstractTreeItem) -> str:
+        """ Build the path from the chain of item names up to root.
+        """
+        path_names = []
+        while item.parent is not None:
+            path_names.insert(0, item.name)
+            item = item.parent
+        path = '/' + '/'.join(path_names)
+        return path
+    
+    def itemFromPath(self, path: str, root: AbstractTreeItem = None) -> AbstractTreeItem:
+        """ Find the item associated with path from root.
+        """
+        if root is None:
+            root = self.root()
+        if path == '/':
+            return root
+        names = path.rstrip('/').split('/')[1:]
+        item = root
+        for name in names:
+            found_child = False
+            for child in item.children:
+                if child.name == name:
+                    item = child
+                    found_child = True
+                    break
+            if not found_child:
+                return None
+        return item
+
+    def pathFromIndex(self, index: QModelIndex = QModelIndex()) -> str:
+        """ Get the path associated with index.
+        """
+        if not index.isValid():
+            # root item
+            return '/'
+        return self.pathFromItem(self.itemFromIndex(index))
+    
+    def indexFromPath(self, path: str) -> QModelIndex:
+        """ Get the index associated with path.
+        """
+        item: AbstractTreeItem = self.itemFromPath(path)
         if (item is self.root()) or (item.parent is None):
             return QModelIndex()
         row: int = item.sibling_index
@@ -203,6 +213,44 @@ class AbstractTreeModel(QAbstractItemModel):
             self.headerDataChanged.emit(orientation, section, section)
             return True
         return False
+    
+    def rowLabels(self) -> list:
+        return self._row_labels
+    
+    def setRowLabels(self, labels: list) -> None:
+        old_labels = self._row_labels
+        n_overlap = min(len(labels), len(old_labels))
+        first_change = 0
+        while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
+            first_change += 1
+        last_change = max(len(labels), len(old_labels)) - 1
+        while (last_change < n_overlap) and (labels[last_change] == old_labels[last_change]):
+            last_change -= 1
+        self._row_labels = labels
+        if first_change <= last_change: 
+            self.headerDataChanged.emit(Qt.Orientation.Vertical, first_change, last_change)
+    
+    def columnLabels(self) -> list | None:
+        return self._column_labels
+    
+    def setColumnLabels(self, labels: list | None) -> None:
+        old_labels = self._column_labels
+        n_overlap = min(len(labels), len(old_labels))
+        first_change = 0
+        while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
+            first_change += 1
+        last_change = max(len(labels), len(old_labels)) - 1
+        while (last_change < n_overlap) and (labels[last_change] == old_labels[last_change]):
+            last_change -= 1
+        self._column_labels = labels
+        if first_change <= last_change: 
+            self.headerDataChanged.emit(Qt.Orientation.Horizontal, first_change, last_change)
+    
+    def maxDepth(self):
+        root: AbstractTreeItem = self.root()
+        if root is None:
+            return 0
+        return root.branch_max_depth()
 
     def removeRows(self, row: int, count: int, parent_index: QModelIndex = QModelIndex()) -> bool:
         """ Calls `AbstractTreeItem.remove_child` to remove rows.
@@ -212,11 +260,8 @@ class AbstractTreeModel(QAbstractItemModel):
         if count <= 0:
             return False
         n_rows: int = self.rowCount(parent_index)
-        if row < 0:
-            # negative indexing
-            row += n_rows
         if (row < 0) or (row + count > n_rows):
-            return False
+            raise IndexError('Invalid row index(es).')
         parent_item: AbstractTreeItem = self.itemFromIndex(parent_index)
         self.beginRemoveRows(parent_index, row, row + count - 1)
         for _ in range(count):
@@ -254,11 +299,8 @@ class AbstractTreeModel(QAbstractItemModel):
         if not items:
             return False
         n_rows: int = self.rowCount(parent_index)
-        if row < 0:
-            # negative indexing
-            row += n_rows
         if (row < 0) or (row > n_rows):
-            return False
+            raise IndexError('Invalid row index(es).')
         parent_item: AbstractTreeItem = self.itemFromIndex(parent_index)
         count: int = len(items)
         self.beginInsertRows(parent_index, row, row + count - 1)
@@ -275,8 +317,13 @@ class AbstractTreeModel(QAbstractItemModel):
         """ !!! For now this is non-optimial and just repeatedly calls `moveRow` one item at a time.
         """
         n_moved: int = 0
-        for i in reversed(list(range(src_row, src_row + count))):
-            n_moved += self.moveRow(src_parent_index, i, dst_parent_index, dst_row)
+        for row in reversed(list(range(src_row, src_row + count))):
+            success: bool = self.moveRow(src_parent_index, row, dst_parent_index, dst_row)
+            n_moved += int(success)
+            if success:
+                if src_parent_index == dst_parent_index:
+                    if row < dst_row:
+                        dst_row -= 1
         return n_moved > 0
     
     def moveRow(self, src_parent_index: QModelIndex, src_row: int, dst_parent_index: QModelIndex, dst_row: int) -> bool:
@@ -286,29 +333,24 @@ class AbstractTreeModel(QAbstractItemModel):
         """
         n_src_rows: int = self.rowCount(src_parent_index)
         n_dst_rows: int = self.rowCount(dst_parent_index)
-        if src_row < 0:
-            # negative indexing
-            src_row += n_src_rows
-        if dst_row < 0:
-            # negative indexing
-            dst_row += n_dst_rows
         if (src_parent_index == dst_parent_index) and (src_row == dst_row):
             # no change
             return False
         if not (0 <= src_row < n_src_rows):
-            return False
+            raise IndexError('Invalid source row index.')
         if not (0 <= dst_row <= n_dst_rows):
-            return False
+            raise IndexError('Invalid destination row index.')
 
         src_parent_item: AbstractTreeItem = self.itemFromIndex(src_parent_index)
         src_item: AbstractTreeItem = src_parent_item.children[src_row]
         dst_parent_item: AbstractTreeItem = self.itemFromIndex(dst_parent_index)
         if dst_parent_item.has_ancestor(src_item):
-            # cannot move an item to one of its descendants
+            # Cannot move an item to one of its descendants.
+            # Instead of raising an error, just silently fail.
             return False
         if src_parent_item is dst_parent_item:
             if (src_row == dst_row) or (src_row + 1 == dst_row):
-                # attempt to move to the same position
+                # attempt to move to the same position, so no change
                 return False
 
         self.beginMoveRows(src_parent_index, src_row, src_row, dst_parent_index, dst_row)
