@@ -128,18 +128,33 @@ class MultiValueSpinBox(QAbstractSpinBox):
                 if ':' in field:
                     # first:last inclusive
                     first, last = [dtype(arg) if len(arg.strip()) else None for arg in field.split(':')]
-                    if first is None:
-                        start_index: int = 0
-                    else:
-                        start_index: int = self.indicesFromValues([first])[0]
-                    if last is None:
-                        stop_index: int = len(self._indexed_values)
-                    else:
-                        stop_index: int = self.indicesFromValues([last])[0] + 1
+                    try:
+                        if first is None:
+                            start_index: int = 0
+                        else:
+                            start_index: int = self.indicesFromValues([first])[0]
+                        if last is None:
+                            stop_index: int = len(self._indexed_values)
+                        else:
+                            stop_index: int = self.indicesFromValues([last])[0] + 1
+                    except:
+                        # try and interpret first, last as indices
+                        if first is None:
+                            start_index: int = 0
+                        else:
+                            start_index: int = int(first)
+                        if last is None:
+                            stop_index: int = len(self._indexed_values)
+                        else:
+                            stop_index: int = int(last) + 1
                     if stop_index > start_index:
                         values.extend(self._indexed_values[start_index:stop_index].tolist())
                 else:
                     value = dtype(field)
+                    if value not in self._indexed_values:
+                        # try and interpret value as an index
+                        index = int(value)
+                        value = self._indexed_values[index]
                     values.append(value)
             except:
                 if validate:
