@@ -1,9 +1,8 @@
 """ PySide/PyQt table widget with copy/paste.
 """
 
-from qtpy.QtCore import *
-from qtpy.QtGui import *
-from qtpy.QtWidgets import *
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QTableWidget, QApplication, QTableWidgetItem
 
 
 class TableWidgetWithCopyPaste(QTableWidget):
