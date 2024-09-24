@@ -2,9 +2,9 @@
 """
 
 from __future__ import annotations
-from qtpy.QtCore import *
-from qtpy.QtGui import *
-from qtpy.QtWidgets import *
+from qtpy.QtCore import Qt, Signal, Slot
+from qtpy.QtGui import QValidator
+from qtpy.QtWidgets import QAbstractSpinBox, QSizePolicy, QApplication
 import re
 import numpy as np
 
@@ -21,6 +21,9 @@ class MultiValueSpinBox(QAbstractSpinBox):
 
     def __init__(self, *args, **kwargs):
         QAbstractSpinBox.__init__(self, *args, **kwargs)
+
+        # whether or not to show all individual values or values ranges when possible
+        self._display_value_ranges_when_possible = True
 
         # possible values to select from
         self._indexed_values: np.ndarray = np.arange(100)
@@ -77,6 +80,14 @@ class MultiValueSpinBox(QAbstractSpinBox):
     def setSelectedValues(self, values: list | np.ndarray):
         indices = self.indicesFromValues(values)
         self.setIndices(indices)
+    
+    def displayValueRangesWhenPossible(self) -> bool:
+        return self._display_value_ranges_when_possible
+    
+    def setDisplayValueRangesWhenPossible(self, show_ranges: bool):
+        self._display_value_ranges_when_possible = show_ranges
+        # update text by resetting indices
+        self.setIndices(self.indices())
     
     def indicesFromValues(self, values: list | np.ndarray, tol: float | None = None) -> np.ndarray[int]:
         if not isinstance(values, np.ndarray):
@@ -168,7 +179,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
         indices = self.indicesFromValues(values)
         index_ranges = []
         for index in indices:
-            if (len(index_ranges) == 0) or (index != index_ranges[-1][-1] + 1):
+            if (not self._display_value_ranges_when_possible) or (len(index_ranges) == 0) or (index != index_ranges[-1][-1] + 1):
                 index_ranges.append([index])
             else:
                 index_ranges[-1].append(index)
@@ -253,6 +264,8 @@ class MultiValueSpinBox(QAbstractSpinBox):
 
     
 def test_live():
+    from qtpy.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QCheckBox
+
     app = QApplication()
 
     def print_indices_and_values(spinbox: MultiValueSpinBox):
@@ -263,13 +276,21 @@ def test_live():
     vbox = QVBoxLayout(ui)
 
     vbox.addWidget(QLabel('Try selecting multiple space- or comma-separated values.'))
-    vbox.addWidget(QLabel('Try selecting value ranges as first-last.'))
+    vbox.addWidget(QLabel('Try selecting value ranges as first:last.'))
+    vbox.addWidget(QLabel('With multiple values selected, try stepping with Shift pressed.'))
+    cbox = QCheckBox('Show value ranges when possible')
+    cbox.setChecked(True)
+    cbox.setToolTip('Change this and see how contiguous selected values are displayed.')
+    vbox.addWidget(cbox)
     vbox.addStretch()
+
+    spinboxes = []
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(list(range(10)))
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
-    vbox.addWidget(QLabel('0-9'))
+    spinboxes.append(spinbox)
+    vbox.addWidget(QLabel('0,1,2,3,4,5,6,7,8,9'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
@@ -277,6 +298,7 @@ def test_live():
     spinbox.setIndexedValues([5,8,15,20])
     spinbox.setIndices([1,2])
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
+    spinboxes.append(spinbox)
     vbox.addWidget(QLabel('5,8,15,20'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
@@ -284,23 +306,35 @@ def test_live():
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(np.linspace(0,1,11))
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
-    vbox.addWidget(QLabel('0.0-1.0'))
+    spinboxes.append(spinbox)
+    vbox.addWidget(QLabel('0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(['a','b','c','d','e','f'])
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
-    vbox.addWidget(QLabel('a-f'))
+    spinboxes.append(spinbox)
+    vbox.addWidget(QLabel('a,b,c,d,e,f'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 
     spinbox = MultiValueSpinBox()
     spinbox.setIndexedValues(['cat','mouse','dog','house','car','truck'])
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
+    spinboxes.append(spinbox)
     vbox.addWidget(QLabel('cat, mouse, dog, house, car, truck'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
+
+    for spinbox in spinboxes:
+        spinbox.setDisplayValueRangesWhenPossible(cbox.isChecked())
+    
+    def on_cbox_changed(checked):
+        for spinbox in spinboxes:
+            spinbox.setDisplayValueRangesWhenPossible(checked)
+    
+    cbox.stateChanged.connect(on_cbox_changed)
 
     ui.show()
     app.exec()
