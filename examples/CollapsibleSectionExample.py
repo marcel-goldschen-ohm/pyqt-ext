@@ -1,27 +1,19 @@
-from __future__ import annotations
 from qtpy.QtWidgets import QApplication, QFormLayout, QPushButton, QLineEdit
 from pyqt_ext.widgets import CollapsibleSection
 
+# Create the application
+app = QApplication()
 
-def example():
-    # Create the application
-    app = QApplication()
+# Collapsible content
+form = QFormLayout()
+form.addRow('Red', QPushButton('Red'))
+form.addRow('Name', QLineEdit('Bob'))
 
-    # Create the collapsible section
-    details = CollapsibleSection(title='Details')
+# Collapsible section
+details = CollapsibleSection(title='Details')
+details.setContentLayout(form)
+details.expand()
+details.show()
 
-    # Collapsible content
-    form = QFormLayout()
-    form.addRow('Red', QPushButton('Red'))
-    form.addRow('Name', QLineEdit('Bob'))
-    details.setContentLayout(form)
-
-    details.expand()
-    details.show()
-
-    # Run the application
-    app.exec()
-
-
-if __name__ == '__main__':
-    example()
+# Run the application
+app.exec()

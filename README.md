@@ -31,14 +31,14 @@ pip install pyqt-ext@git+https://github.com/marcel-goldschen-ohm/pyqt-ext
 :construction:
 
 - `graph/`
-    - Graph style utils
+    - :construction: Graph style
 - `tree/`
-    - [Abstract tree model/view interface](docs/AbstractTree.md) - *Because who wants to go through the pain of deciphering Qt's convoluted tree model/view design which is infuriating each and every time you work with it.*
-    - [(key, value) tree model/view](docs/KeyValueTree.md) - *An exampel of how easy it is to build custom tree behavior using the abstract interface above.*
+    - **[Abstract tree model/view interface](docs/AbstractTree.md)** [[code](src/pyqt_ext/tree/)] [[example](examples/CustomTreeExample.py)]: Because who wants to go through the pain of deciphering Qt's convoluted tree model/view design which is infuriating each and every time you work with it. Includes drag-n-drop moving within a tree. See [example](examples/CustomTreeExample.py) for a custom tree using this interface.
+    - **[(Key, Value) tree model/view](docs/KeyValueTree.md)** [[code](src/pyqt_ext/tree/)] [[example](examples/KeyValueTreeExample.py)]: Tree model/view for (key, value) pairs in a dict or list (keys are list indices). Can be nested to any level. Uses the abstract tree interface above.
 - `utils/`
-    - [Color utils](docs/ColorUtils.md)
+    - **Color** [[code](src/pyqt_ext/utils/Color.py)]: QColor conversions.
 - `widgets/`
-    - Collapsible section
-    - [Color selection button](docs/ColorButton.md)
-    - [Multi-value spinbox](docs/MultiValueSpinBox.md)
-    - Table widget with copy/paste
+    - **Collapsible section** [[code](src/pyqt_ext/widgets/CollapsibleSection.py)] [[example](examples/CollapsibleSectionExample.py)]: Widget with header that can be toggled to expand/collapse a layout.
+    - **Color selection button** [[code](src/pyqt_ext/widgets/ColorButton.py)] [[example](examples/ColorButtonExample.py)]: Tool button that displays selected color and opens color selection dialog on click.
+    - **Multi-value spinbox** [[code](src/pyqt_ext/widgets/MultiValueSpinBox.py)] [[example](examples/MultiValueSpinBoxExample.py)]: Spin box allowing multiple selected values and value ranges. Works with string values too.
+    - **Table widget with copy/paste** [[code](src/pyqt_ext/widgets/TableWidgetWithCopyPaste.py)]: QTableWidget with copy/paste to/from clipboard.

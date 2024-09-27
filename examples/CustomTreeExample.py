@@ -51,48 +51,43 @@ class CustomDndTreeModel(AbstractDndTreeModel):
         return 2
 
 
-def example():
-    # Create the application
-    app = QApplication()
+# Create the application
+app = QApplication()
 
-    print('\nBuild the tree...')
-    root = CustomTreeItem()
-    CustomTreeItem(data=82, parent=root)
-    root.append_child(CustomTreeItem(data=[1, 2, 3], name='child2'))
-    root.insert_child(1, CustomTreeItem(data=3.14, name='child3'))
-    root.children[1].append_child(CustomTreeItem(data='some cool data'))
-    grandchild2 = CustomTreeItem(data=False, name='grandchild2')
-    grandchild2.parent = root['child2']
-    CustomTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
-    print(root)
+print('\nBuild the tree...')
+root = CustomTreeItem()
+CustomTreeItem(data=82, parent=root)
+root.append_child(CustomTreeItem(data=[1, 2, 3], name='child2'))
+root.insert_child(1, CustomTreeItem(data=3.14, name='child3'))
+root.children[1].append_child(CustomTreeItem(data='some cool data'))
+grandchild2 = CustomTreeItem(data=False, name='grandchild2')
+grandchild2.parent = root['child2']
+CustomTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
+print(root)
 
-    print('\nDepth first iteration...')
-    for item in root.depth_first():
-        print(item.name)
-    
-    # Tree model with drag and drop enabled...
-    model = CustomDndTreeModel(root)
+print('\nDepth first iteration...')
+for item in root.depth_first():
+    print(item.name)
 
-    # To access the underlying item tree...
-    #root = model.root()
+# Tree model with drag and drop enabled...
+model = CustomDndTreeModel(root)
 
-    # To reset the underlying item tree...
-    #model.setRoot(root)
+# To access the underlying item tree...
+#root = model.root()
 
-    # Tree view widget with default behavior...
-    view = TreeView()
-    view.setModel(model)
-    view.expandAll()
-    view.resizeAllColumnsToContents()
-    view.show()
+# To reset the underlying item tree...
+#model.setRoot(root)
 
-    # Run the application...
-    app.exec()
+# Tree view widget with default behavior...
+view = TreeView()
+view.setModel(model)
+view.expandAll()
+view.resizeAllColumnsToContents()
+view.show()
 
-    # print the final tree...
-    print('\nFinal tree...')
-    print(root)
+# Run the application...
+app.exec()
 
-
-if __name__ == '__main__':
-    example()
+# print the final tree...
+print('\nFinal tree...')
+print(root)
