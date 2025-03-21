@@ -1,4 +1,6 @@
 """ PySide/PyQt expandable/collapsible section.
+
+icons require QtAwesome >=1.4.0
 """
 
 from qtpy.QtCore import Qt, QPropertyAnimation, QParallelAnimationGroup, QAbstractAnimation
@@ -24,7 +26,7 @@ class CollapsibleSection(QWidget):
         self.toggleButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
         # self.toggleButton.setArrowType(Qt.RightArrow)
         # Use font awesome icons because default arrow icons on MacOS look terrible
-        self.toggleButton.setIcon(qta.icon('fa.angle-right'))
+        self.toggleButton.setIcon(qta.icon('fa6s.angle-right'))
         self.toggleButton.setText(str(title))
         self.toggleButton.setCheckable(True)
         self.toggleButton.setChecked(False)
@@ -93,7 +95,7 @@ class CollapsibleSection(QWidget):
         if self.toggleButton.isChecked() != expanded:
             self.toggleButton.setChecked(expanded)
         # arrow_type = Qt.DownArrow if expanded else Qt.RightArrow
-        icon = qta.icon('fa.angle-down') if expanded else qta.icon('fa.angle-right')
+        icon = qta.icon('fa6s.angle-down') if expanded else qta.icon('fa6s.angle-right')
         direction = QAbstractAnimation.Direction.Forward if expanded else QAbstractAnimation.Direction.Backward
         # toggleButton.setArrowType(arrow_type)
         self.toggleButton.setIcon(icon)

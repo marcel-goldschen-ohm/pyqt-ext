@@ -25,6 +25,9 @@ class MultiValueSpinBox(QAbstractSpinBox):
         # whether or not to show all individual values or values ranges when possible
         self._display_value_ranges_when_possible = True
 
+        # whether or not to indicate number of indexed values in suffix
+        self._show_suffix = False
+
         # possible values to select from
         self._indexed_values: np.ndarray = np.arange(100)
 
@@ -44,7 +47,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
         self.lineEdit().setPlaceholderText(self.textFromValues(self._indexed_values))
     
     def indices(self) -> np.ndarray[int]:
-        mask = (0 <= self._indices) & (self._indices < len(self._indexed_values))
+        mask = (self._indices >= 0) & (self._indices < len(self._indexed_values))
         return self._indices[mask]
     
     def setIndices(self, indices: list[int] | np.ndarray[int]):
@@ -53,12 +56,8 @@ class MultiValueSpinBox(QAbstractSpinBox):
             indices = np.array(indices, dtype=int)
         elif not np.issubdtype(indices.dtype, np.integer):
             indices = indices.astype(int)
-        mask = (0 <= indices) & (indices < len(self._indexed_values))
-        if np.any(mask):
-            self._indices = indices[mask]
-        else:
-            # default to first index if input indices are invalid
-            self._indices = np.array([0], dtype=int)
+        mask = (indices >= 0) & (indices < len(self._indexed_values))
+        self._indices = indices[mask]
         text = self.textFromValues(self.selectedValues())
         self.lineEdit().setText(text)
         self.indicesChanged.emit()
@@ -68,7 +67,7 @@ class MultiValueSpinBox(QAbstractSpinBox):
     
     def setIndexedValues(self, values: list | np.ndarray):
         if not isinstance(values, np.ndarray):
-            dtype = type(values[0])
+            dtype = type(values[0]) if len(values) > 0 else int
             values = np.array(values, dtype=dtype)
         self._indexed_values = values
         self.setIndices(self.indices())
@@ -89,11 +88,19 @@ class MultiValueSpinBox(QAbstractSpinBox):
         # update text by resetting indices
         self.setIndices(self.indices())
     
-    def indicesFromValues(self, values: list | np.ndarray, tol: float | None = None) -> np.ndarray[int]:
+    def showSuffix(self) -> bool:
+        return self._show_suffix
+    
+    def setShowSuffix(self, show_suffix: bool):
+        self._show_suffix = show_suffix
+        # update text by resetting indices
+        self.setIndices(self.indices())
+    
+    def indicesFromValues(self, values: list | np.ndarray, side='left', tol: float | None = None) -> np.ndarray[int]:
         if not isinstance(values, np.ndarray):
             values = np.array(values, dtype=self._indexed_values.dtype)
         if np.issubdtype(self._indexed_values.dtype, np.floating):
-            indices = np.searchsorted(self._indexed_values, values, side='left')
+            indices = np.searchsorted(self._indexed_values, values, side=side)
             for i, index in enumerate(indices):
                 if index > 0:
                     # check if previous value is closer
@@ -121,9 +128,11 @@ class MultiValueSpinBox(QAbstractSpinBox):
         return indices
     
     def valuesFromText(self, text: str, validate: bool = False) -> list:
+        if self._show_suffix:
+            text = text.replace(self._suffix.strip(), '')
         text = text.strip()
         if text == '':
-            return np.array([0])
+            return self._indexed_values
         if text == ':':
             return self._indexed_values
         fields = re.split(r'[,\s]+', text)
@@ -139,34 +148,21 @@ class MultiValueSpinBox(QAbstractSpinBox):
                 if ':' in field:
                     # first:last inclusive
                     first, last = [dtype(arg) if len(arg.strip()) else None for arg in field.split(':')]
-                    try:
-                        if first is None:
-                            start_index: int = 0
-                        else:
-                            start_index: int = self.indicesFromValues([first])[0]
-                        if last is None:
-                            stop_index: int = len(self._indexed_values)
-                        else:
-                            stop_index: int = self.indicesFromValues([last])[0] + 1
-                    except:
-                        # try and interpret first, last as indices
-                        if first is None:
-                            start_index: int = 0
-                        else:
-                            start_index: int = int(first)
-                        if last is None:
-                            stop_index: int = len(self._indexed_values)
-                        else:
-                            stop_index: int = int(last) + 1
+                    if first is None:
+                        start_index: int = 0
+                    else:
+                        start_index: int = np.where(self._indexed_values >= first)[0][0]
+                    if last is None:
+                        stop_index: int = len(self._indexed_values)
+                    else:
+                        stop_index: int = np.where(self._indexed_values <= last)[0][-1] + 1
                     if stop_index > start_index:
                         values.extend(self._indexed_values[start_index:stop_index].tolist())
                 else:
                     value = dtype(field)
-                    if value not in self._indexed_values:
-                        # try and interpret value as an index
-                        index = int(value)
-                        value = self._indexed_values[index]
-                    values.append(value)
+                    index: int = self.indicesFromValues([value])[0]
+                    closest_value = self._indexed_values[index]
+                    values.append(closest_value)
             except:
                 if validate:
                     raise ValueError(f'Invalid text: {field}')
@@ -203,6 +199,9 @@ class MultiValueSpinBox(QAbstractSpinBox):
                     last_value_text = str(last_value)
                 texts.append(first_value_text + ':' + last_value_text)
         text = ','.join(texts)
+        if self._show_suffix:
+            self._suffix = f'  ({len(indices)}/{len(self._indexed_values)})'
+            text += self._suffix
         return text
     
     @Slot()
@@ -287,10 +286,10 @@ def test_live():
     spinboxes = []
 
     spinbox = MultiValueSpinBox()
-    spinbox.setIndexedValues(list(range(10)))
+    spinbox.setIndexedValues([0, 1, 2, 3, 4, 7, 8, 9])
     spinbox.indicesChanged.connect(lambda obj=spinbox: print_indices_and_values(obj))
     spinboxes.append(spinbox)
-    vbox.addWidget(QLabel('0,1,2,3,4,5,6,7,8,9'))
+    vbox.addWidget(QLabel('0,1,2,3,4,7,8,9'))
     vbox.addWidget(spinbox)
     vbox.addStretch()
 

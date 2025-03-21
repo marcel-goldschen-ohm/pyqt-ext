@@ -30,8 +30,6 @@ pip install pyqt-ext@git+https://github.com/marcel-goldschen-ohm/pyqt-ext
 ## Documentation
 :construction:
 
-- `graph/`
-    - :construction: Graph style
 - `tree/`
     - **[Abstract tree model/view interface](docs/AbstractTree.md)** [[code](src/pyqt_ext/tree/)] [[example](examples/CustomTreeExample.py)]: Because who wants to go through the pain of deciphering Qt's convoluted tree model/view design which is infuriating each and every time you work with it. Includes drag-n-drop moving within a tree. See [example](examples/CustomTreeExample.py) for a custom tree using this interface.
     - **[(Key, Value) tree model/view](docs/KeyValueTree.md)** [[code](src/pyqt_ext/tree/)] [[example](examples/KeyValueTreeExample.py)]: Tree model/view for (key, value) pairs in a dict or list (keys are list indices). Can be nested to any level. Uses the abstract tree interface above.

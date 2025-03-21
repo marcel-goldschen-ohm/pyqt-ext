@@ -20,6 +20,8 @@ def toQColor(color: ColorType, name_map: dict[str, ColorType] = None) -> QColor:
             return toQColor(name_map[color])
         elif QColor.isValidColorName(color):
             return QColor(color)
+        elif color.lower() == 'none':
+            return QColor('transparent')
         else:
             # (r,g,b) or (r,g,b,a)
             color = color.lstrip('(').rstrip(')').split(',')
@@ -38,7 +40,7 @@ def toColorStr(color: ColorType) -> str:
     """ Convert a color object to a string representation of the color.
     """
     if color is None:
-        return None
+        return 'none'
     if isinstance(color, QColor):
         # (r,g,b,a) in [0,255]
         return f'({color.red()}, {color.green()}, {color.blue()}, {color.alpha()})'
