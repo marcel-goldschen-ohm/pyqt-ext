@@ -25,8 +25,8 @@ class MultiValueSpinBox(QAbstractSpinBox):
         # whether or not to show all individual values or values ranges when possible
         self._display_value_ranges_when_possible = True
 
-        # whether or not to indicate number of indexed values in suffix
-        self._show_suffix = False
+        # suffix
+        self._suffix = ''
 
         # possible values to select from
         self._indexed_values: np.ndarray = np.arange(100)
@@ -88,11 +88,11 @@ class MultiValueSpinBox(QAbstractSpinBox):
         # update text by resetting indices
         self.setIndices(self.indices())
     
-    def showSuffix(self) -> bool:
-        return self._show_suffix
+    def suffix(self) -> str:
+        return self._suffix
     
-    def setShowSuffix(self, show_suffix: bool):
-        self._show_suffix = show_suffix
+    def setSuffix(self, suffix: str):
+        self._suffix = suffix
         # update text by resetting indices
         self.setIndices(self.indices())
     
@@ -128,8 +128,8 @@ class MultiValueSpinBox(QAbstractSpinBox):
         return indices
     
     def valuesFromText(self, text: str, validate: bool = False) -> list:
-        if self._show_suffix:
-            text = text.replace(self._suffix.strip(), '')
+        if self.suffix():
+            text = text.replace(self.suffix().strip(), '')
         text = text.strip()
         if text == '':
             return self._indexed_values
@@ -199,9 +199,8 @@ class MultiValueSpinBox(QAbstractSpinBox):
                     last_value_text = str(last_value)
                 texts.append(first_value_text + ':' + last_value_text)
         text = ','.join(texts)
-        if self._show_suffix:
-            self._suffix = f'  ({len(indices)}/{len(self._indexed_values)})'
-            text += self._suffix
+        if self.suffix():
+            text += self.suffix()
         return text
     
     @Slot()
