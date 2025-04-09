@@ -73,6 +73,25 @@ class TreeView(QTreeView):
         items: list[AbstractTreeItem] = [model.itemFromIndex(index) for index in indexes]
         return items
     
+    def selectedPaths(self) -> list[str]:
+        return [item.path for item in self.selectedItems()]
+    
+    def setSelectedPaths(self, paths: list[str]):
+        model: AbstractTreeModel = self.model()
+        self.selectionModel().clearSelection()
+        selection: QItemSelection = QItemSelection()
+        for item in model.root().depth_first():
+            if item is model.root():
+                continue
+            index: QModelIndex = model.indexFromItem(item)
+            if index.column() != 0:
+                continue
+            path: str = item.path
+            if path in paths or path.lstrip('/') in paths:
+                selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        if selection.count():
+            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+    
     @Slot(QPoint)
     def onCustomContextMenuRequested(self, point: QPoint):
         index: QModelIndex = self.indexAt(point)
@@ -382,6 +401,12 @@ def test_live():
     view.resize(QSize(600, 600))
     view.expandAll()
     view.resizeAllColumnsToContents()
+
+    # view.selectAll()
+    # paths = view.selectedPaths()
+    # print(paths)
+    # view.setSelectedPaths(paths[-2:])
+    # print(view.selectedPaths())
 
     app.exec()
 
