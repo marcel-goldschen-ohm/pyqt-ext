@@ -1,11 +1,12 @@
 """ PySide/PyQt expandable/collapsible section.
-
-icons require QtAwesome >=1.4.0
 """
 
 from qtpy.QtCore import Qt, QPropertyAnimation, QParallelAnimationGroup, QAbstractAnimation
 from qtpy.QtWidgets import QWidget, QToolButton, QFrame, QScrollArea, QPushButton, QLineEdit, QSizePolicy, QLayout, QFormLayout, QVBoxLayout, QGridLayout
-import qtawesome as qta
+try:
+    import qtawesome as qta
+except ImportError:
+    qta = None
 
 
 class CollapsibleSection(QWidget):
@@ -24,9 +25,11 @@ class CollapsibleSection(QWidget):
         self.toggleButton = QToolButton()
         self.toggleButton.setStyleSheet("QToolButton { border: none; }")
         self.toggleButton.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        # self.toggleButton.setArrowType(Qt.RightArrow)
-        # Use font awesome icons because default arrow icons on MacOS look terrible
-        self.toggleButton.setIcon(qta.icon('fa6s.angle-right'))
+        if qta:
+            # Use font awesome icons because default arrow icons on MacOS look terrible
+            self.toggleButton.setIcon(qta.icon('fa6s.angle-right'))
+        else:
+            self.toggleButton.setArrowType(Qt.RightArrow)
         self.toggleButton.setText(str(title))
         self.toggleButton.setCheckable(True)
         self.toggleButton.setChecked(False)
@@ -94,11 +97,13 @@ class CollapsibleSection(QWidget):
     def setIsExpanded(self, expanded: bool) -> None:
         if self.toggleButton.isChecked() != expanded:
             self.toggleButton.setChecked(expanded)
-        # arrow_type = Qt.DownArrow if expanded else Qt.RightArrow
-        icon = qta.icon('fa6s.angle-down') if expanded else qta.icon('fa6s.angle-right')
+        if qta:
+            icon = qta.icon('fa6s.angle-down') if expanded else qta.icon('fa6s.angle-right')
+            self.toggleButton.setIcon(icon)
+        else:
+            arrow_type = Qt.DownArrow if expanded else Qt.RightArrow
+            self.toggleButton.setArrowType(arrow_type)
         direction = QAbstractAnimation.Direction.Forward if expanded else QAbstractAnimation.Direction.Backward
-        # toggleButton.setArrowType(arrow_type)
-        self.toggleButton.setIcon(icon)
         self.toggleAnimation.setDirection(direction)
         self.toggleAnimation.start()
     
