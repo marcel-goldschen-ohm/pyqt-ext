@@ -2,22 +2,21 @@
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
-
 [project]
 name = "pyqt-ext"
-description = "Collection of PyQt/PySide widgets/tools"
+description = "Collection of PyQt widgets/tools"
 dynamic = ["version"]
-authors = [
-    {name = "Marcel Goldschen-Ohm", email = "goldschen-ohm@utexas.edu"},
-]
 requires-python = ">=3.10"
 dependencies = [
     "numpy>=1.26.2",
-    "qtpy>=2.4.1",
-    "qtawesome>=1.4.0",
+    "QtPy>=2.4.1",
+    "QtAwesome>=1.4.0",
+]
+authors = [
+    {name = "Marcel Goldschen-Ohm", email = "goldschen-ohm@utexas.edu"},
 ]
 readme = "README.md"
-keywords = ["PyQt", "PySide"]
+keywords = ["PyQt", "PySide", "pyqtgraph"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -25,16 +24,21 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
 ]
 
+[project.optional-dependencies]
+PySide6 = ["PySide6>=6.9"]
+pyqtgraph = [
+    "pyqtgraph>=0.13.3",
+    "scipy>=1.11.4",
+    "lmfit>=1.2.2",
+]
 
 [project.urls]
 homepage = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
 repository = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
 issues = "https://github.com/marcel-goldschen-ohm/pyqt-ext/issues"
 
-
 [tool.pdm]
 distribution = true
-
 
 [tool.pdm.version]
 source = "scm"
