@@ -22,36 +22,42 @@ class KeyValueTreeItem(AbstractTreeItem):
                 KeyValueTreeItem(None, value[i], parent=self)
     
     def __repr__(self):
-        if self.is_container():
-            return f'{self.key}'
-        return f'{self.key}: {self.value}'
+        if self.isBasicValue():
+            return f'{self.key}: {self.value}, <{type(self.value)}>'
+        return f'{self.key}: {type(self.value)}'
+    
+    def __str__(self) -> str:
+        return self._tree_repr(lambda item: item.__repr__())
     
     @property
     def key(self) -> str | int:
         # if parent is a list, the key is the index of this item in the list
-        if self.parent is not None:
-            if self.parent.is_list():
-                return self.sibling_index
+        parent: KeyValueTreeItem = self.parent
+        if (parent is not None) and parent.isList():
+            return self.siblingIndex()
         # otherwise, return the local key
         return self._key
     
     @key.setter
     def key(self, key: str) -> None:
         # update parent dict
-        if self.parent is not None:
-            if self.parent.is_dict():
+        parent: KeyValueTreeItem = self.parent
+        if parent is not None:
+            parent_container = parent.value
+            if isinstance(parent_container, dict):
+                parent_dict: dict = parent_container
                 # only allow string keys for dict
                 key = str(key)
                 # remove old key from parent dict
-                if (self.key is not None) and (self.key in self.parent.value):
-                    self.parent.value.pop(self.key)
+                if (self.key is not None) and (self.key in parent_dict):
+                    parent_dict.pop(self.key)
                 # make sure key is unique
-                if key in self.parent.value:
-                    key = unique_name(key, list(self.parent.value.keys()))
+                if key in parent_dict:
+                    key = unique_name(key, list(parent_dict.keys()))
                 # add new key to parent dict
-                self.parent.value[key] = self.value
-            elif self.parent.is_list():
-                # cannot edit list index
+                parent_dict[key] = self.value
+            elif isinstance(parent_container, list):
+                # key is always the list index
                 return
         # update local key
         self._key = key
@@ -63,14 +69,13 @@ class KeyValueTreeItem(AbstractTreeItem):
     @value.setter
     def value(self, value) -> None:
         # remove any children
-        children = self.children.copy()
-        for child in children:
-            self.remove_child(child)
+        for child in self.children.copy():
+            self.removeChild(child)
 
         # update parent dict or list
         if self.parent is not None:
-            if self.parent.is_dict() or self.parent.is_list():
-                self.parent.value[self.key] = value
+            parent_container = self.parent.value
+            parent_container[self.key] = value
         # update local value
         self._value = value
 
@@ -87,77 +92,76 @@ class KeyValueTreeItem(AbstractTreeItem):
     def parent(self, parent: KeyValueTreeItem | None) -> None:
         if self.parent is parent:
             return
-        if (parent is not None) and (not parent.is_container()):
-            raise ValueError('Parent must be a container (dict or list).')
-        old_parent: KeyValueTreeItem | None = self.parent
-
-        # update item tree
-        AbstractTreeItem.parent.fset(self, parent)
+        if (parent is not None):
+            parent_container = parent.value
+            if not (isinstance(parent_container, dict) or isinstance(parent_container, list)):
+                raise ValueError('Parent must be a key[value] container (currently only dict or list supported).')
 
         # remove value from old parent container
+        old_parent: KeyValueTreeItem | None = self.parent
         if old_parent is not None:
-            if old_parent.is_dict():
-                for key, value in old_parent.value.items():
-                    if (value is self.value) or (value == self.value):
-                        old_parent.value.pop(key)
-                        break
-            elif old_parent.is_list():
-                if self.value in old_parent.value:
-                    old_parent.value.remove(self.value)
+            old_parent_container = old_parent.value
+            # old_parent_container is a dict or list
+            old_parent_container.pop(self.key)
         
         # insert value into new parent container
         if parent is not None:
-            if parent.is_dict():
-                if self.value not in parent.value.values():
-                    # resetting key will insert value into parent dict
-                    self.key = str(self.key)
-                    # # ensure unique key
-                    # if key in parent.value:
-                    #     key = unique_name(key, list(parent.value.keys()))
-                    # self._key = key
-                    # parent.value[self.key] = self.value
-            elif parent.is_list():
-                if self.value not in parent.value:
-                    parent.value.append(self.value)
-        
-        self.ensure_unique_key()
+            parent_container = parent.value
+            if isinstance(parent_container, dict):
+                existing_sibling_item_keys = [child.key for child in parent.children]
+                if self.key in existing_sibling_item_keys:
+                    # add key[value] pair without overwritting existing key[value] pair
+                    self._key = unique_name(self.key, existing_sibling_item_keys)
+                # if the parent dict alreayd has this key[value pair], this won't do anything
+                parent_container[self.key] = self.value
+            elif isinstance(parent_container, list):
+                index = len(parent.children)
+                if len(parent_container) <= index:
+                    parent_container.append(self.value)
+                else:
+                    # parent list already has data at this position (probably this value already)
+                    parent_container[index] = self.value
+
+        # update item tree linkage
+        AbstractTreeItem.parent.fset(self, parent)
     
     @AbstractTreeItem.name.getter
     def name(self) -> str:
         return str(self.key)
     
-    def is_dict(self):
+    def isContainer(self) -> bool:
+        return self.isDict() or self.isList()
+    
+    def isDict(self) -> bool:
         return isinstance(self.value, dict)
     
-    def is_list(self):
+    def isList(self) -> bool:
         return isinstance(self.value, list)
     
-    def is_container(self):
-        return self.is_dict() or self.is_list()
+    def isBasicValue(self) -> bool:
+        return not self.isContainer()
     
-    def ensure_unique_key(self):
-        if self.parent is None:
-            return
-        keys = [sibling.key for sibling in self.parent.children if sibling is not self]
-        if self.key in keys:
-            self.key = unique_name(self.key, keys)
-    
-    def insert_child(self, index: int, item: KeyValueTreeItem) -> bool:
-        if not AbstractTreeItem.insert_child(self, index, item):
+    def insertChild(self, index: int, item: KeyValueTreeItem) -> bool:
+        if not AbstractTreeItem.insertChild(self, index, item):
             return False
-        if self.is_list():
-            pos = self.value.index(item.value)
+        if isinstance(self.value, list):
+            # above appends item.value to self.value
+            pos = len(self.value) - 1
+            # if needed, move item.value to index in self.value
             if pos != index:
-                self.value.insert(index, self.value.pop(pos))
+                if pos < index:
+                    index -= 1
+                if pos != index:
+                    self.value.insert(index, self.value.pop(pos))
         return True
     
-    def get_data(self, column: int):
+    def data(self, column: int):
         if column == 0:
             return self.key
         elif column == 1:
             return self.value
     
-    def set_data(self, column: int, value) -> bool:
+    def setData(self, column: int, value) -> bool:
         if column == 0:
             self.key = value
             return True
@@ -193,43 +197,43 @@ def test_tree():
         },
     }
     root = KeyValueTreeItem('/', data)
-    print(root)
+    print('-'*82, root)
 
-    root.remove_child(root['/a'])
-    print('remove /a')
+    root.removeChild(root['/a'])
+    print('\nremove /a')
     print(root)
 
     d = root['c/d']
     f = root['c/d/f']
-    d.remove_child(f)
-    print('remove /c/d/f')
+    d.removeChild(f)
+    print('\nremove /c/d/f')
     print(root)
 
     d.parent = root
-    print('move /c/d to /d')
+    print('\nmove /c/d to /d')
     print(root)
 
-    root.insert_child(1, d)
-    print('move /d to 2nd child of /')
+    root.insertChild(1, d)
+    print('\nmove /d to 2nd child of /')
     print(root)
 
     b = root['b']
-    b.insert_child(2, d)
-    print('move /d to 3rd child of /b')
+    b.insertChild(2, d)
+    print('\nmove /d to 3rd child of /b')
     print(root)
 
-    b.remove_child(b['1'])
-    print('remove /b/1')
+    b.removeChild(b['1'])
+    print('\nremove /b/1')
     print(root)
 
     c = root['c']
-    c.children[1].value = 'bye'
-    print('/c/me:hi -> /c/me:bye')
+    c.children[0].value = 'bye'
+    print('\n/c/me:hi -> /c/me:bye')
     print(root)
     print(c)
 
-    c.insert_child(0, b['1'])
-    print('move /b/1 to first child of /c')
+    c.insertChild(0, b['1'])
+    print('\nmove /b/1 to first child of /c')
     print(root)
 
 

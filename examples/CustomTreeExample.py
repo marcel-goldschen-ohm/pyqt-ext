@@ -21,13 +21,13 @@ class CustomTreeItem(AbstractTreeItem):
     
     # For an editable tree with two columns: name, data...
 
-    def get_data(self, column: int):
+    def data(self, column: int):
         if column == 0:
             return self.name
         elif column == 1:
             return self.data
     
-    def set_data(self, column: int, value) -> bool:
+    def setData(self, column: int, value) -> bool:
         if column == 0:
             self.name = value
             return True
@@ -57,16 +57,16 @@ app = QApplication()
 print('\nBuild the tree...')
 root = CustomTreeItem()
 CustomTreeItem(data=82, parent=root)
-root.append_child(CustomTreeItem(data=[1, 2, 3], name='child2'))
-root.insert_child(1, CustomTreeItem(data=3.14, name='child3'))
-root.children[1].append_child(CustomTreeItem(data='some cool data'))
+root.appendChild(CustomTreeItem(data=[1, 2, 3], name='child2'))
+root.insertChild(1, CustomTreeItem(data=3.14, name='child3'))
+root.children[1].appendChild(CustomTreeItem(data='some cool data'))
 grandchild2 = CustomTreeItem(data=False, name='grandchild2')
 grandchild2.parent = root['child2']
 CustomTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
 print(root)
 
 print('\nDepth first iteration...')
-for item in root.depth_first():
+for item in root.depthFirst():
     print(item.name)
 
 # Tree model with drag and drop enabled...

@@ -2,6 +2,7 @@
 """
 
 from __future__ import annotations
+from typing import Callable
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
@@ -10,32 +11,39 @@ from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel
 
 class TreeView(QTreeView):
     """ Tree view for an AbstractTreeModel with context menu and mouse wheel expand/collapse.
+
+    You can add custom callbacks to each item's context menu which take the item as input.
+    See self._itemContextMenuFunctions in self.__init__().
     """
 
     selectionWasChanged = Signal()
 
     def __init__(self, parent: QObject = None) -> None:
         QTreeView.__init__(self, parent)
+
         sizePolicy = self.sizePolicy()
         sizePolicy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
         sizePolicy.setVerticalPolicy(QSizePolicy.Policy.Expanding)
         self.setSizePolicy(sizePolicy)
-        self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
+        self.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
         # self.setAlternatingRowColors(True)
 
         # selection
         self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        # self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         # context menu
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.onCustomContextMenuRequested)
 
-        # these will appear in the item's context menu
+        # These menu action (text, function(item)) pairs will be used to populate each item's context menu.
+        # If {item} is in the text, it will be replaced by the item's tree path.
+        # The callback function should take the item as its sole argument.
         self._itemContextMenuFunctions: list[tuple[str, Callable[[AbstractTreeItem]]]] = [
             # ('Print', print),
-            # ('Separator', None),
-            ('Remove', lambda item, self=self: self.askToRemoveItem(item)),
+            ('Remove {item}', lambda item, self=self: self.askToRemoveItem(item)),
+            ('Separator', None),
         ]
     
     def setModel(self, model: AbstractTreeModel):
@@ -55,7 +63,8 @@ class TreeView(QTreeView):
     
     def resetModel(self):
         self.storeState()
-        self.model().setRoot(self.model().root())
+        model: AbstractTreeModel = self.model()
+        model.reset()
         self.restoreState()
     
     @Slot(QItemSelection, QItemSelection)
@@ -73,6 +82,20 @@ class TreeView(QTreeView):
         items: list[AbstractTreeItem] = [model.itemFromIndex(index) for index in indexes]
         return items
     
+    def setSelectedItems(self, items: list[AbstractTreeItem]):
+        model: AbstractTreeModel = self.model()
+        self.selectionModel().clearSelection()
+        selection: QItemSelection = QItemSelection()
+        for item in items:
+            if item is model.root():
+                continue
+            index: QModelIndex = model.indexFromItem(item)
+            if index.column() != 0:
+                continue
+            selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        if selection.count():
+            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+    
     def selectedPaths(self) -> list[str]:
         return [item.path for item in self.selectedItems()]
     
@@ -80,7 +103,7 @@ class TreeView(QTreeView):
         model: AbstractTreeModel = self.model()
         self.selectionModel().clearSelection()
         selection: QItemSelection = QItemSelection()
-        for item in model.root().depth_first():
+        for item in model.root().depthFirst():
             if item is model.root():
                 continue
             index: QModelIndex = model.indexFromItem(item)
@@ -95,36 +118,35 @@ class TreeView(QTreeView):
     @Slot(QPoint)
     def onCustomContextMenuRequested(self, point: QPoint):
         index: QModelIndex = self.indexAt(point)
-        menu: QMenu = self.contextMenu(index)
+        menu: QMenu = self.customContextMenu(index)
         if menu is not None:
             menu.exec(self.viewport().mapToGlobal(point))
     
-    def contextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu | None:
+    def customContextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
         model: AbstractTreeModel = self.model()
         if model is None:
-            return None
+            raise ValueError('Invalid model.')
         
-        menu: QMenu = QMenu(self)
+        menu = QMenu(self)
 
         # context menu for item that was clicked on
         if index.isValid() and len(self._itemContextMenuFunctions) > 0:
             item: AbstractTreeItem = model.itemFromIndex(index)
             label = self.truncateLabel(item.path)
-            item_menu = QMenu(label)
             for key, func in self._itemContextMenuFunctions:
                 if key.lower() == 'separator' and func is None:
-                    item_menu.addSeparator()
+                    menu.addSeparator()
                 else:
-                    item_menu.addAction(key, lambda item=item, func=func: func(item))
-            menu.addMenu(item_menu)
-            menu.addSeparator()
+                    if '{item}' in key:
+                        key = key.replace('{item}', label)
+                    menu.addAction(key, lambda item=item, func=func: func(item))
         
         menu.addAction('Expand all', self.expandAll)
         menu.addAction('Collapse all', self.collapseAll)
         if model.columnCount() > 1:
             menu.addAction('Resize columns to contents', self.resizeAllColumnsToContents)
         
-        if self.selectionMode() in [QAbstractItemView.ContiguousSelection, QAbstractItemView.ExtendedSelection, QAbstractItemView.MultiSelection]:
+        if self.selectionMode() in [QAbstractItemView.SelectionMode.ContiguousSelection, QAbstractItemView.SelectionMode.ExtendedSelection, QAbstractItemView.SelectionMode.MultiSelection]:
             menu.addSeparator()
             menu.addAction('Select all', self.selectAll)
             menu.addAction('Clear selection', self.clearSelection)
@@ -201,17 +223,19 @@ class TreeView(QTreeView):
             model.removeItem(item)
     
     def eventFilter(self, obj: QObject, event: QEvent):
-        if event.type() == QEvent.Wheel:
-            modifiers: Qt.KeyboardModifier = event.modifiers()
-            if Qt.KeyboardModifier.ControlModifier in modifiers \
-            or Qt.KeyboardModifier.AltModifier in modifiers \
-            or Qt.KeyboardModifier.MetaModifier in modifiers:
-                self.mouseWheelEvent(event)
-                return True
-        # elif event.type() == QEvent.FocusIn:
+        if event.type() == QEvent.Type.Wheel:
+            # modifiers: Qt.KeyboardModifier = event.modifiers()
+            # if Qt.KeyboardModifier.ControlModifier in modifiers \
+            # or Qt.KeyboardModifier.AltModifier in modifiers \
+            # or Qt.KeyboardModifier.MetaModifier in modifiers:
+            #     self.mouseWheelEvent(event)
+            #     return True
+            self.mouseWheelEvent(event)
+            return True
+        # elif event.type() == QEvent.Type.FocusIn:
         #     print('FocusIn')
         #     # self.showDropIndicator(True)
-        # elif event.type() == QEvent.FocusOut:
+        # elif event.type() == QEvent.Type.FocusOut:
         #     print('FocusOut')
         return QTreeView.eventFilter(self, obj, event)
     
@@ -345,15 +369,19 @@ class TreeView(QTreeView):
         if not hasattr(self, '_state'):
             self._state = {}
         selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
-        for item in model.root().depth_first():
+        for item in model.root().depthFirst():
             if item is model.root():
                 continue
             index: QModelIndex = model.indexFromItem(item)
-            path = item.path
-            self._state[path] = {
-                'expanded': self.isExpanded(index),
-                'selected': index in selected
-            }
+            if index.isValid():
+                try:
+                    path = item.path
+                    self._state[path] = {
+                        'expanded': self.isExpanded(index),
+                        'selected': index in selected
+                    }
+                except:
+                    pass
 
     def restoreState(self):
         model: AbstractTreeModel = self.model()
@@ -363,17 +391,19 @@ class TreeView(QTreeView):
             return
         self.selectionModel().clearSelection()
         selection: QItemSelection = QItemSelection()
-        for item in model.root().depth_first():
+        for item in model.root().depthFirst():
             if item is model.root():
                 continue
             index: QModelIndex = model.indexFromItem(item)
-            path = item.path
-            if path in self._state:
-                isExpanded = self._state[path].get('expanded', False)
-                self.setExpanded(index, isExpanded)
-                isSelected = self._state[path].get('selected', False)
-                if isSelected:
-                    selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+            if index.isValid():
+                path = item.path
+                if path in self._state:
+                    state: dict = self._state[path]
+                    isExpanded = state.get('expanded', False)
+                    self.setExpanded(index, isExpanded)
+                    isSelected = state.get('selected', False)
+                    if isSelected:
+                        selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
         if selection.count():
             self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
 
@@ -384,14 +414,14 @@ def test_live():
     app = QApplication()
 
     root = AbstractTreeItem()
-    root.append_child(AbstractTreeItem())
-    root.append_child(AbstractTreeItem())
-    root.append_child(AbstractTreeItem())
-    root.children[-1].append_child(AbstractTreeItem())
-    root.children[-1].append_child(AbstractTreeItem())
-    root.children[-1].append_child(AbstractTreeItem())
-    root.children[-1].children[0].append_child(AbstractTreeItem())
-    root.children[-1].children[0].append_child(AbstractTreeItem())
+    root.appendChild(AbstractTreeItem())
+    root.appendChild(AbstractTreeItem())
+    root.appendChild(AbstractTreeItem())
+    root.children[-1].appendChild(AbstractTreeItem())
+    root.children[-1].appendChild(AbstractTreeItem())
+    root.children[-1].appendChild(AbstractTreeItem())
+    root.children[-1].children[0].appendChild(AbstractTreeItem())
+    root.children[-1].children[0].appendChild(AbstractTreeItem())
     
     model = AbstractDndTreeModel(root)
     view = TreeView()

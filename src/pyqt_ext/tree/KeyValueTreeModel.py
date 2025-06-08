@@ -11,8 +11,8 @@ import qtawesome as qta
 
 class KeyValueTreeModel(AbstractTreeModel):
 
-    sigKeyChanged = Signal()
-    sigValueChanged = Signal()
+    keyChanged = Signal()
+    valueChanged = Signal()
     
     def __init__(self, root: KeyValueTreeItem = None, parent: QObject = None):
         AbstractTreeModel.__init__(self, root, parent)
@@ -35,7 +35,7 @@ class KeyValueTreeModel(AbstractTreeModel):
         flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEditable
         if self.supportedDropActions() != Qt.DropAction.IgnoreAction:
             flags |= Qt.ItemFlag.ItemIsDragEnabled
-            if item.is_container():
+            if item.isContainer():
                 flags |= Qt.ItemFlag.ItemIsDropEnabled
         # data = self.data(index, Qt.ItemDataRole.DisplayRole)
         # if isinstance(data, bool):
@@ -47,27 +47,27 @@ class KeyValueTreeModel(AbstractTreeModel):
             return None
         item: KeyValueTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.DisplayRole:
-            if index.column() == 1 and item.is_container():
+            if index.column() == 1 and item.isContainer():
                 return None
-            return item.get_data(index.column())
+            return item.data(index.column())
         elif role == Qt.ItemDataRole.EditRole:
-            return item.get_data(index.column())
+            return item.data(index.column())
         elif role == Qt.ItemDataRole.DecorationRole:
             if index.column() == 0:
-                if item.is_dict():
+                if item.isDict():
                     return qta.icon('ph.folder-thin')
-                if item.is_list():
+                if item.isList():
                     return qta.icon('ph.list-numbers-thin')
 
     def setData(self, index: QModelIndex, value, role: int) -> bool:
         item: KeyValueTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.EditRole:
-            success: bool = item.set_data(index.column(), value)
+            success: bool = item.setData(index.column(), value)
             if success:
                 if index.column() == 0:
-                    self.sigKeyChanged.emit()
+                    self.keyChanged.emit()
                 elif index.column() == 1:
-                    self.sigValueChanged.emit()
+                    self.valueChanged.emit()
             return success
         return False
 
