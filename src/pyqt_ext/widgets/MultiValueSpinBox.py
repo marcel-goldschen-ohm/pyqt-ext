@@ -148,14 +148,23 @@ class MultiValueSpinBox(QAbstractSpinBox):
                 if ':' in field:
                     # first:last inclusive
                     first, last = [dtype(arg) if len(arg.strip()) else None for arg in field.split(':')]
+                    
                     if first is None:
                         start_index: int = 0
-                    else:
+                    elif np.issubdtype(dtype, np.floating):
                         start_index: int = np.where(self._indexed_values >= first)[0][0]
+                    else:
+                        # exact match only
+                        start_index: int = np.where(self._indexed_values == first)[0][0]
+                    
                     if last is None:
                         stop_index: int = len(self._indexed_values)
-                    else:
+                    elif np.issubdtype(dtype, np.floating):
                         stop_index: int = np.where(self._indexed_values <= last)[0][-1] + 1
+                    else:
+                        # exact match only
+                        stop_index: int = np.where(self._indexed_values == last)[0][-1] + 1
+                    
                     if stop_index > start_index:
                         values.extend(self._indexed_values[start_index:stop_index].tolist())
                 else:
