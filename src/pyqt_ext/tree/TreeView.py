@@ -1,26 +1,28 @@
-""" Tree view for an AbstractTreeModel with context menu and mouse wheel expand/collapse.
+""" Tree view for an `AbstractTreeModel` with context menu and mouse wheel expand/collapse.
+
+TODO:
+- fix drag-and-drop bug
 """
 
 from __future__ import annotations
-from typing import Callable
+from typing import Callable, Any
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
-from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel
+import qtawesome as qta
+from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel, AbstractTreeMimeData
 
 
 class TreeView(QTreeView):
-    """ Tree view for an AbstractTreeModel with context menu and mouse wheel expand/collapse.
-
-    You can add custom callbacks to each item's context menu which take the item as input.
-    See self._itemContextMenuFunctions in self.__init__().
-    """
 
     selectionWasChanged = Signal()
 
-    def __init__(self, parent: QObject = None) -> None:
-        QTreeView.__init__(self, parent)
+    VIEW_STATE_ATTR = 'view_state'
 
+    def __init__(self, *args, **kwargs) -> None:
+        QTreeView.__init__(self, *args, **kwargs)
+
+        # general settings
         sizePolicy = self.sizePolicy()
         sizePolicy.setHorizontalPolicy(QSizePolicy.Policy.Expanding)
         sizePolicy.setVerticalPolicy(QSizePolicy.Policy.Expanding)
@@ -29,103 +31,185 @@ class TreeView(QTreeView):
         # self.setAlternatingRowColors(True)
 
         # selection
-        self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        # self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        # self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+
+        # drag-n-drop
+        self.setDragAndDropEnabled(True)
 
         # context menu
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.onCustomContextMenuRequested)
 
-        # These menu action (text, function(item)) pairs will be used to populate each item's context menu.
+        # These menu action (text, function(item), condition(item) -> bool) tuples will be used to populate each item's context menu.
         # If {item} is in the text, it will be replaced by the item's tree path.
-        # The callback function should take the item as its sole argument.
-        self._itemContextMenuFunctions: list[tuple[str, Callable[[AbstractTreeItem]]]] = [
-            # ('Print', print),
-            ('Remove {item}', lambda item, self=self: self.askToRemoveItem(item)),
-            ('Separator', None),
+        # If text includes '/', create a submenu (nested submenus are NOT supported).
+        # '---' without any function is treated as a separator.
+        # The callbacks function(item) and condition(item) should take the item as sole argument.
+        # If condition is not None, only include this action if condition(item) == True.
+        self._itemContextMenuFunctions: list[tuple[str, Callable[[AbstractTreeItem]], Callable[[AbstractTreeItem]]]] = [
+            ('{item}/Remove', lambda item, self=self: self.askToRemoveItems([item]), None),
+            ('---', None, None), # to separate this stuff from the rest of the default context menu
         ]
     
-    def setModel(self, model: AbstractTreeModel):
-        QTreeView.setModel(self, model)
-
-        # drag and drop?
-        is_dnd: bool = model is not None and model.supportedDropActions() != Qt.DropAction.IgnoreAction
-        self.setDragEnabled(is_dnd)
-        self.setAcceptDrops(is_dnd)
-        self.viewport().setAcceptDrops(is_dnd)
-        self.setDropIndicatorShown(is_dnd)
-        if is_dnd:
-            self.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
-            self.setDefaultDropAction(Qt.DropAction.MoveAction)
-        else:
-            self.setDragDropMode(QAbstractItemView.DragDropMode.NoDragDrop)
-    
-    def resetModel(self):
+    def refresh(self) -> None:
         self.storeState()
-        model: AbstractTreeModel = self.model()
-        model.reset()
+        self.model().reset()
         self.restoreState()
     
+    def model(self) -> AbstractTreeModel:
+        model: AbstractTreeModel = super().model()
+        return model
+    
+    def treeData(self) -> Any:
+        return self.model().treeData()
+    
+    def setTreeData(self, data: Any) -> None:
+        self.storeState()
+        if self.model() is None:
+            self.setModel(AbstractTreeModel(data))
+        else:
+            self.model().setTreeData(data)
+        self.restoreState()
+    
+    def storeState(self, items: list[AbstractTreeItem] = None) -> None:
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            return
+        root: AbstractTreeItem = model.root()
+        if root is None:
+            return
+        if items is None:
+            items = list(root.depthFirst())
+        
+        selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
+        for item in items:
+            if item is root:
+                continue
+            index: QModelIndex = model.indexFromItem(item)
+            if not index.isValid():
+                continue
+            setattr(item, self.VIEW_STATE_ATTR, {
+                'expanded': self.isExpanded(index),
+                'selected': index in selected
+            })
+
+    def restoreState(self, items: list[AbstractTreeItem] = None) -> None:
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            return
+        root: AbstractTreeItem = model.root()
+        if root is None:
+            return
+        if items is None:
+            items = list(root.depthFirst())
+
+        to_select: QItemSelection = QItemSelection()
+        to_deselect: QItemSelection = QItemSelection()
+        for item in items:
+            if item is root:
+                continue
+            index: QModelIndex = model.indexFromItem(item)
+            if not index.isValid():
+                continue
+            item_view_state = getattr(item, self.VIEW_STATE_ATTR, None)
+            if item_view_state is None:
+                continue
+            isExpanded = item_view_state.get('expanded', None)
+            if isExpanded is not None:
+                self.setExpanded(index, isExpanded)
+            isSelected = item_view_state.get('selected', None)
+            if isSelected is not None:
+                # flags = QItemSelectionModel.SelectionFlag.Rows
+                # if isSelected:
+                #     flags |= QItemSelectionModel.SelectionFlag.Select
+                # else:
+                #     flags |= QItemSelectionModel.SelectionFlag.Deselect
+                # self.selectionModel().selection().select(index, index, flags)
+                if isSelected:
+                    to_select.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+                else:
+                    to_deselect.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        if to_deselect.count():
+            self.selectionModel().select(to_deselect, QItemSelectionModel.SelectionFlag.Deselect | QItemSelectionModel.SelectionFlag.Rows)
+        if to_select.count():
+            self.selectionModel().select(to_select, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+    
     @Slot(QItemSelection, QItemSelection)
-    def selectionChanged(self, selected: QItemSelection, deselected: QItemSelection):
+    def selectionChanged(self, selected: QItemSelection, deselected: QItemSelection) -> None:
         QTreeView.selectionChanged(self, selected, deselected)
         self.selectionWasChanged.emit()
 
-    def selectedItems(self, column: int | None = 0) -> list[AbstractTreeItem]:
+    def selectedItems(self) -> list[AbstractTreeItem]:
         model: AbstractTreeModel = self.model()
         if model is None:
             return []
         indexes: list[QModelIndex] = self.selectionModel().selectedIndexes()
-        if column is not None:
-            indexes = [index for index in indexes if index.column() == column]
         items: list[AbstractTreeItem] = [model.itemFromIndex(index) for index in indexes]
         return items
     
     def setSelectedItems(self, items: list[AbstractTreeItem]):
         model: AbstractTreeModel = self.model()
+        if model is None:
+            return
         self.selectionModel().clearSelection()
         selection: QItemSelection = QItemSelection()
+        flags = QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows
         for item in items:
-            if item is model.root():
-                continue
             index: QModelIndex = model.indexFromItem(item)
-            if index.column() != 0:
+            if not index.isValid():
                 continue
-            selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+            selection.merge(QItemSelection(index, index), flags)
         if selection.count():
-            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+            self.selectionModel().select(selection, flags)
     
-    def selectedPaths(self) -> list[str]:
-        return [item.path for item in self.selectedItems()]
-    
-    def setSelectedPaths(self, paths: list[str]):
+    def removeItems(self, items: list[AbstractTreeItem]) -> None:
         model: AbstractTreeModel = self.model()
-        self.selectionModel().clearSelection()
-        selection: QItemSelection = QItemSelection()
-        for item in model.root().depthFirst():
-            if item is model.root():
-                continue
-            index: QModelIndex = model.indexFromItem(item)
-            if index.column() != 0:
-                continue
-            path: str = item.path
-            if path in paths or path.lstrip('/') in paths:
-                selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-        if selection.count():
-            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        if model is None:
+            return
+        if not items:
+            return
+        self.model().removeItems(items)
+    
+    def removeSelectedItems(self) -> None:
+        items: list[AbstractTreeItem] = self.selectedItems()
+        self.removeItems(items)
+    
+    def askToRemoveItems(self, items: list[AbstractTreeItem], title: str = 'Remove', text: str = None) -> None:
+        model: AbstractTreeModel = self.model()
+        if model is None:
+            return
+        if not items:
+            return
+        if text is None:
+            if len(items) == 1:
+                text = f'Remove {items[0].path}?'
+            else:
+                text = f'Remove items including {items[0].path}?'
+        answer = QMessageBox.question(self, title, text, 
+            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
+            defaultButton=QMessageBox.StandardButton.No
+        )
+        if answer!= QMessageBox.StandardButton.Yes:
+            return
+        self.removeItems(items)
+    
+    def askToRemoveSelectedItems(self) -> None:
+        items: list[AbstractTreeItem] = self.selectedItems()
+        self.askToRemoveItems(items, text='Remove selected?')
     
     @Slot(QPoint)
-    def onCustomContextMenuRequested(self, point: QPoint):
+    def onCustomContextMenuRequested(self, point: QPoint) -> None:
         index: QModelIndex = self.indexAt(point)
-        menu: QMenu = self.customContextMenu(index)
+        menu: QMenu | None = self.customContextMenu(index)
         if menu is not None:
             menu.exec(self.viewport().mapToGlobal(point))
     
-    def customContextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
+    def customContextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu | None:
         model: AbstractTreeModel = self.model()
         if model is None:
-            raise ValueError('Invalid model.')
+            return
         
         menu = QMenu(self)
 
@@ -133,30 +217,53 @@ class TreeView(QTreeView):
         if index.isValid() and len(self._itemContextMenuFunctions) > 0:
             item: AbstractTreeItem = model.itemFromIndex(index)
             label = self.truncateLabel(item.path)
-            for key, func in self._itemContextMenuFunctions:
-                if key.lower() == 'separator' and func is None:
-                    menu.addSeparator()
+            submenus: dict[str, QMenu] = {}
+            for key, func, condition in self._itemContextMenuFunctions:
+                if condition is not None:
+                    if not condition(item):
+                        continue
+                
+                submenu_name = ''
+                if '/' in key:
+                    submenu_name, key = key.split('/')
+                if '{item}' in submenu_name:
+                    submenu_name = submenu_name.replace('{item}', label)
+                if '{item}' in key:
+                    key = key.replace('{item}', label)
+                item_menu = menu
+                if submenu_name:
+                    if submenu_name not in submenus:
+                        submenus[submenu_name] = menu.addMenu(submenu_name)
+                    item_menu = submenus[submenu_name]
+                
+                if key == '---' and func is None:
+                    item_menu.addSeparator()
+                elif func:
+                    item_menu.addAction(key, lambda item=item, func=func: func(item))
                 else:
-                    if '{item}' in key:
-                        key = key.replace('{item}', label)
-                    menu.addAction(key, lambda item=item, func=func: func(item))
+                    action = item_menu.addAction(key)
+                    action.setEnabled(False)
         
-        menu.addAction('Expand all', self.expandAll)
-        menu.addAction('Collapse all', self.collapseAll)
+        menu.addAction('Expand All', self.expandAll)
+        menu.addAction('Collapse All', self.collapseAll)
         if model.columnCount() > 1:
-            menu.addAction('Resize columns to contents', self.resizeAllColumnsToContents)
+            menu.addAction('Resize Columns to Contents', self.resizeAllColumnsToContents)
+            menu.addAction('Show All', self.showAll)
         
         if self.selectionMode() in [QAbstractItemView.SelectionMode.ContiguousSelection, QAbstractItemView.SelectionMode.ExtendedSelection, QAbstractItemView.SelectionMode.MultiSelection]:
             menu.addSeparator()
-            menu.addAction('Select all', self.selectAll)
-            menu.addAction('Clear selection', self.clearSelection)
+            menu.addAction('Select All', self.selectAll)
+            menu.addAction('Select None', self.clearSelection)
         
-        if len(self.selectedItems()) > 1:
+        if len(self.selectedPaths()) > 1:
             menu.addSeparator()
-            menu.addAction('Remove all selected items', self.removeSelectedItems)
+            menu.addAction('Remove Selected', self.askToRemoveSelectedItems)
+
+        menu.addSeparator()
+        menu.addAction('Refresh', self.refresh)
         
         return menu
-
+    
     def truncateLabel(self, label: str, max_length: int = 50) -> str:
         """ Truncate long strings from the beginning.
         
@@ -167,62 +274,32 @@ class TreeView(QTreeView):
             return label
         return '...' + label[-(max_length - 3):]
     
-    def expandAll(self):
+    def expandAll(self) -> None:
         QTreeView.expandAll(self)
-        try:
-            model: AbstractTreeModel = self.model()
-            self._depth = model.maxDepth() - 1
-        except:
-            pass
+        # store current expanded depth
+        self._expanded_depth_ = self.model().maxDepth()
     
-    def collapseAll(self):
+    def collapseAll(self) -> None:
         QTreeView.collapseAll(self)
-        self._depth = 0
+        self._expanded_depth_ = 0
     
-    def expandToDepth(self, depth: int):
-        model: AbstractTreeModel = self.model()
-        if model is not None:
-            depth = max(0, min(depth, model.maxDepth() - 1))
-            if depth == 0:
-                self.collapseAll()
-                return
-        QTreeView.expandToDepth(self, depth - 1)
-        self._depth = depth
-    
-    def resizeAllColumnsToContents(self):
-        model: AbstractTreeModel = self.model()
-        if model is None:
+    def expandToDepth(self, depth: int) -> None:
+        depth = max(0, min(depth, self.model().maxDepth()))
+        if depth == 0:
+            self.collapseAll()
             return
-        for col in range(model.columnCount()):
+        QTreeView.expandToDepth(self, depth - 1)
+        self._expanded_depth_ = depth
+    
+    def resizeAllColumnsToContents(self) -> None:
+        for col in range(self.model().columnCount()):
             self.resizeColumnToContents(col)
     
-    def askToRemoveItem(self, item: AbstractTreeItem, label: str = None):
-        if label is None:
-            label = item.name
-        answer = QMessageBox.question(self, 'Remove', f'Remove {label}?', 
-            buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
-            defaultButton=QMessageBox.StandardButton.No
-        )
-        if answer == QMessageBox.StandardButton.Yes:
-            model: AbstractTreeModel = self.model()
-            model.removeItem(item)
+    def showAll(self) -> None:
+        self.expandAll()
+        self.resizeAllColumnsToContents()
     
-    def removeSelectedItems(self, ask_before_removing: bool = True):
-        items: list[AbstractTreeItem] = self.selectedItems()
-        if not items:
-            return
-        if ask_before_removing:
-            answer = QMessageBox.question(self, 'Remove', f'Remove selected items?', 
-                buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
-                defaultButton=QMessageBox.StandardButton.No
-            )
-            if answer != QMessageBox.StandardButton.Yes:
-                return
-        model: AbstractTreeModel = self.model()
-        for item in reversed(items):
-            model.removeItem(item)
-    
-    def eventFilter(self, obj: QObject, event: QEvent):
+    def eventFilter(self, obj: QObject, event: QEvent) -> None:
         if event.type() == QEvent.Type.Wheel:
             # modifiers: Qt.KeyboardModifier = event.modifiers()
             # if Qt.KeyboardModifier.ControlModifier in modifiers \
@@ -237,208 +314,103 @@ class TreeView(QTreeView):
         #     # self.showDropIndicator(True)
         # elif event.type() == QEvent.Type.FocusOut:
         #     print('FocusOut')
+        #     # self.showDropIndicator(False)
         return QTreeView.eventFilter(self, obj, event)
     
-    def mouseWheelEvent(self, event: QWheelEvent):
+    def mouseWheelEvent(self, event: QWheelEvent) -> None:
         delta: int = event.angleDelta().y()
-        depth = getattr(self, '_depth', 0)
+        depth = getattr(self, '_expanded_depth_', 0)
         if delta > 0:
             self.expandToDepth(depth + 1)
         elif delta < 0:
             self.expandToDepth(depth - 1)
     
-    # def mousePressEvent(self, event: QMouseEvent):
-    #     if self.selectionMode() != QAbstractItemView.SelectionMode.SingleSelection:
-    #         if event.button() == Qt.MouseButton.LeftButton:
-    #             index: QModelIndex = self.indexAt(event.pos())
-    #             if not index.isValid():
-    #                 self.selectionModel().clearSelection()
-    #     QTreeView.mousePressEvent(self, event)
-    
-    def dragEnterEvent(self, event: QDragEnterEvent):
-        # print('dragEnterEvent   ', event.mimeData().formats(), event.possibleActions())
-        index: QModelIndex = event.source().currentIndex()
-        if index.isValid() and index != QModelIndex():
-            # because we have to clear a stupidly persisting drop indicator on each drop
-            self.setDropIndicatorShown(True)
-
-            # Not sure if this is needed?
-            self.storeState()
-
-            event.accept()
+    def setDragAndDropEnabled(self, enabled: bool) -> None:
+        if enabled:
+            self.setDragDropMode(QAbstractItemView.DragDropMode.DragDrop)
+            self.setDefaultDropAction(Qt.DropAction.MoveAction)
         else:
-            event.ignore()
+            self.setDragDropMode(QAbstractItemView.DragDropMode.NoDragDrop)
+        self.setDragEnabled(enabled)
+        self.setAcceptDrops(enabled)
+        self.viewport().setAcceptDrops(enabled)
+        self.setDropIndicatorShown(enabled)
     
-    # def dragMoveEvent(self, event: QDragMoveEvent):
-    #     QTreeView.dragMoveEvent(self, event)
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        mime_data = event.mimeData()
+        if isinstance(mime_data, AbstractTreeMimeData) and mime_data.model is self.model():
+            # Store the current state of the dragged paths and all their descendent paths in the MIME data.
+            # We only want to do this for the model where the drag was initiated (i.e., mime_data.model).
+            # We'll use this stored state in the dropEvent to restore the view of the dropped items.
+            self.storeState(mime_data.items)
+        QTreeView.dragEnterEvent(self, event)
     
-    def dragLeaveEvent(self, event: QDragLeaveEvent):
-        # This prevents the drop indicator from being hidden
-        # when the mouse leaves the widget while dragging,
-        # by not calling the default implementation of dragLeaveEvent.
-        # The problem with the default behavior is that the drop indicator
-        # doesn't reappear when the mouse re-enters the widget!
-        # print('dragLeaveEvent')
-        event.accept()
+    def dropEvent(self, event: QDropEvent) -> None:
+        mime_data = event.mimeData()
+        QTreeView.dropEvent(self, event)
+        if isinstance(mime_data, AbstractTreeMimeData):
+            # update state of dragged items as specified in the MIME data
+            self.restoreState(mime_data.items)
     
-    def dropEvent(self, event: QDropEvent):
-        # print('dropEvent')
-        
-        model: AbstractTreeModel = self.model()
-        if model is None:
-            event.ignore()
-            return
-        
-        src_index: QModelIndex = event.source().currentIndex()
-        if (src_index is None) or (not src_index.isValid()) or (src_index == QModelIndex()):
-            event.ignore()
-            return
-        
-        dst_index: QModelIndex = self.indexAt(event.pos())
-        if (dst_index is None):
-            event.ignore()
-            return
-        
-        dst_parent_index: QModelIndex = model.parent(dst_index)
-        dst_row = dst_index.row()
-
-        drop_pos = self.dropIndicatorPosition()
-        if drop_pos == QAbstractItemView.DropIndicatorPosition.OnViewport:
-            dst_parent_index = QModelIndex()
-            dst_row = model.rowCount(dst_parent_index)
-        elif drop_pos == QAbstractItemView.DropIndicatorPosition.OnItem:
-            dst_parent_index = dst_index
-            dst_row = model.rowCount(dst_parent_index)
-        elif drop_pos == QAbstractItemView.DropIndicatorPosition.AboveItem:
-            pass
-        elif drop_pos == QAbstractItemView.DropIndicatorPosition.BelowItem:
-            dst_row += 1
-        
-        src_indices: list[QModelIndex] = [index for index in self.selectionModel().selectedIndexes() if index.column() == 0]
-
-        if event.dropAction() == Qt.DropAction.MoveAction:
-            # move selected rows onto drop target
-            num_moved = 0
-            # handle in reverse so rows are not invalidated
-            for src_index in reversed(src_indices):
-                if (src_index is None) or (not src_index.isValid()) or (src_index == QModelIndex()):
-                    continue
-        
-                src_parent_index: QModelIndex = model.parent(src_index)
-                src_row = src_index.row()
-        
-                try:
-                    success: bool = model.moveRow(src_parent_index, src_row, dst_parent_index, dst_row)
-                    num_moved += int(success)
-                    if success:
-                        if src_parent_index == dst_parent_index:
-                            if src_row < dst_row:
-                                dst_row -= 1
-                except Exception as err:
-                    QMessageBox.warning(self, 'Move Error', f'{err}')
-
-            # We already handled the drop event, so ignore the default implementation.
-            event.ignore()
-
-            # Not sure if this is needed?
-            self.restoreState()
-            
-            # Make sure moved rows are selected.
-            self.selectionModel().clearSelection()
-            selection: QItemSelection = QItemSelection()
-            for row in range(dst_row, dst_row + num_moved):
-                index = model.index(row, 0, dst_parent_index)
-                selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-
-        # clear persisting drop indicator !?
-        self.setDropIndicatorShown(False)
+    """
+    Everything below here is for path-based manipulation of the tree.
+    !! This typically only makes sense if all sibling items have unique names.
+       If sibling items should be able to have the same name, you probably should not use the functions below.
+    """
     
-    # def dropMimeData(self, index: QModelIndex, data: QMimeData, action: Qt.DropAction) -> bool:
-    #     print('dropMimeData')
-    #     return False
+    def selectedPaths(self) -> list[str]:
+        items: list[AbstractTreeItem] = self.selectedItems()
+        paths: list[str] = [item.path for item in items]
+        return paths
     
-    # def canDropMimeData(self, data: QMimeData, action: Qt.DropAction, row: int, column: int, parent: QModelIndex) -> bool:
-    #     print('canDropMimeData')
-    #     return True
-    
-    def storeState(self):
+    def setSelectedPaths(self, paths: list[str]):
         model: AbstractTreeModel = self.model()
         if model is None:
             return
-        if not hasattr(self, '_state'):
-            self._state = {}
-        selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
-        for item in model.root().depthFirst():
-            if item is model.root():
-                continue
-            index: QModelIndex = model.indexFromItem(item)
-            if index.isValid():
-                try:
-                    path = item.path
-                    self._state[path] = {
-                        'expanded': self.isExpanded(index),
-                        'selected': index in selected
-                    }
-                except:
-                    pass
-
-    def restoreState(self):
+        items: list[AbstractTreeItem] = [model.itemFromPath(path) for path in paths]
+        self.setSelectedItems(items)
+    
+    def removePaths(self, paths: list[str]) -> None:
         model: AbstractTreeModel = self.model()
         if model is None:
             return
-        if not hasattr(self, '_state'):
+        items: list[AbstractTreeItem] = [model.itemFromPath(path) for path in paths]
+        self.removeItems(items)
+    
+    def askToRemovePaths(self, paths: list[str], title: str = 'Remove', text: str = None) -> None:
+        model: AbstractTreeModel = self.model()
+        if model is None:
             return
-        self.selectionModel().clearSelection()
-        selection: QItemSelection = QItemSelection()
-        for item in model.root().depthFirst():
-            if item is model.root():
-                continue
-            index: QModelIndex = model.indexFromItem(item)
-            if index.isValid():
-                path = item.path
-                if path in self._state:
-                    state: dict = self._state[path]
-                    isExpanded = state.get('expanded', False)
-                    self.setExpanded(index, isExpanded)
-                    isSelected = state.get('selected', False)
-                    if isSelected:
-                        selection.merge(QItemSelection(index, index), QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
-        if selection.count():
-            self.selectionModel().select(selection, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        items: list[AbstractTreeItem] = [model.itemFromPath(path) for path in paths]
+        self.askToRemoveItems(items, title, text)
+    
+    def askToRemoveSelectedPaths(self) -> None:
+        paths: list[str] = self.selectedPaths()
+        self.askToRemovePaths(paths, text='Remove selected?')
 
 
 def test_live():
-    from pyqt_ext.tree import AbstractDndTreeModel
+    root = AbstractTreeItem()
+    AbstractTreeItem(parent=root)
+    root.appendChild(AbstractTreeItem(name='child2'))
+    root.insertChild(1, AbstractTreeItem(name='child3'))
+    root.children[1].appendChild(AbstractTreeItem())
+    root.children[1].appendChild(AbstractTreeItem())
+    root.children[1].appendChild(AbstractTreeItem())
+    grandchild2 = AbstractTreeItem(name='grandchild2')
+    grandchild2.parent = root['child2']
+    AbstractTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
+    print(root)
 
     app = QApplication()
-
-    root = AbstractTreeItem()
-    root.appendChild(AbstractTreeItem())
-    root.appendChild(AbstractTreeItem())
-    root.appendChild(AbstractTreeItem())
-    root.children[-1].appendChild(AbstractTreeItem())
-    root.children[-1].appendChild(AbstractTreeItem())
-    root.children[-1].appendChild(AbstractTreeItem())
-    root.children[-1].children[0].appendChild(AbstractTreeItem())
-    root.children[-1].children[0].appendChild(AbstractTreeItem())
-    
-    model = AbstractDndTreeModel(root)
+    model = AbstractTreeModel(root)
     view = TreeView()
-    view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
     view.setModel(model)
     view.show()
-    view.resize(QSize(600, 600))
-    view.expandAll()
-    view.resizeAllColumnsToContents()
-
-    # view.selectAll()
-    # paths = view.selectedPaths()
-    # print(paths)
-    # view.setSelectedPaths(paths[-2:])
-    # print(view.selectedPaths())
-
+    view.resize(QSize(800, 600))
+    view.showAll()
     app.exec()
+    print(root)
 
 
 if __name__ == '__main__':
