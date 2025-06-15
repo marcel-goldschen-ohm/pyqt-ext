@@ -19,7 +19,7 @@ class AbstractTreeModel(QAbstractItemModel):
 
     Constructor takes either the tree data itself or a root item wrapping the tree data.
 
-    This class can work as is, but in general you will derive from it and reimplement `setupItemTree` and `treeData`. Optionally also reimplement `columnCount`, `flags`, etc. to suit your data.
+    This class can work as is, but in general you will derive from it and reimplement `setupItemTree`, `treeData`, `data` and `setData`. Optionally also reimplement `columnCount`, `flags`, etc. to suit your data.
     """
 
     def __init__(self, data: AbstractTreeItem | Any = None, **kwargs):
@@ -165,30 +165,29 @@ class AbstractTreeModel(QAbstractItemModel):
             flags |= Qt.ItemFlag.ItemIsDragEnabled | Qt.ItemFlag.ItemIsDropEnabled
         return flags
 
+    # !! Probably need to reimpliment.
     def data(self, index: QModelIndex, role: int):
-        """ Get data via `AbstractTreeItem.data`.
-        
-        Reimpliment if you need custom behavior beyond `AbstractTreeItem.data`.
-        Otherwise, you probably do not need to touch this if you have appropriately implemented `AbstractTreeItem.data`.
+        """ Reimpliment to get the data at index.
         """
         if not index.isValid():
             return
         item: AbstractTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
-            return item.data(index.column())
+            if index.column() == 0:
+                return item.name
 
+    # !! Probably need to reimpliment.
     def setData(self, index: QModelIndex, value, role: int) -> bool:
-        """ Set data via `AbstractTreeItem.setData`.
-        
-        Reimpliment if you need custom behavior beyond `AbstractTreeItem.setData`.
-        Otherwise, you probably do not need to touch this if you have appropriately implemented `AbstractTreeItem.setData`.
+        """ Reimpliment to set the data at index.
         """
+        if not index.isValid():
+            return False
         item: AbstractTreeItem = self.itemFromIndex(index)
         if role == Qt.ItemDataRole.EditRole:
-            success: bool = item.setData(index.column(), value)
-            if success:
+            if index.column() == 0:
+                item.name = value
                 self.dataChanged.emit(index, index)
-            return success
+                return True
         return False
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int):

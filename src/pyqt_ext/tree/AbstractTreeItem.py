@@ -412,18 +412,6 @@ class AbstractTreeItem():
             item = item.lastChild()
         return item
 
-    # interface for QAbstractItemModel ----------------------------------------
-    
-    def data(self, column: int):
-        # raise NotImplementedError
-        if column == 0:
-            # for debugging
-            return self.name
-    
-    def setData(self, column: int, value) -> bool:
-        # raise NotImplementedError
-        return False
-
 
 def test_tree():
     root = AbstractTreeItem()
