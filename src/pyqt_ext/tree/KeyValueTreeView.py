@@ -6,36 +6,36 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from pyqt_ext.tree import TreeView, KeyValueTreeItem, KeyValueTreeModel
-from pyqt_ext.tree.KeyValueTreeItem import unique_name
+# from pyqt_ext.tree.KeyValueTreeItem import unique_name
 
 
 class KeyValueTreeView(TreeView):
 
-    def __init__(self, parent: QObject = None) -> None:
-        TreeView.__init__(self, parent)
+    def __init__(self, *args, **kwargs) -> None:
+        TreeView.__init__(self, *args, **kwargs)
 
         # delegate
         self.setItemDelegate(KeyValueTreeViewDelegate(self))
     
-    def customContextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
-        menu: QMenu = TreeView.customContextMenu(self, index)
+    # def customContextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
+    #     menu: QMenu = TreeView.customContextMenu(self, index)
        
-        model: KeyValueTreeModel = self.model()
+    #     model: KeyValueTreeModel = self.model()
         
-        if not index.isValid():
-            if model.root() is not None:
-                menu.addSeparator()
-                menu.addAction('Add item', lambda model=model, row=len(model.root().children), item=KeyValueTreeItem('New item', ''), parentIndex=QModelIndex(): model.insertItems(row, [item], parentIndex))
-            return menu
+    #     if not index.isValid():
+    #         if model.root() is not None:
+    #             menu.addSeparator()
+    #             menu.addAction('Add item', lambda model=model, row=len(model.root().children), item=KeyValueTreeItem('New item', ''), parentIndex=QModelIndex(): model.insertItems(row, [item], parentIndex))
+    #         return menu
         
-        item: KeyValueTreeItem = model.itemFromIndex(index)
-        menu.addSeparator()
-        menu.addAction('Insert before', lambda model=model, row=item.siblingIndex(), item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
-        menu.addAction('Insert after', lambda model=model, row=item.siblingIndex() + 1, item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
-        if item.is_container():
-            menu.addAction('Append child', lambda model=model, row=len(item.children), item=KeyValueTreeItem('New item', ''), parentIndex=index: model.insertItems(row, [item], parentIndex))
+    #     item: KeyValueTreeItem = model.itemFromIndex(index)
+    #     menu.addSeparator()
+    #     menu.addAction('Insert before', lambda model=model, row=item.siblingIndex(), item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
+    #     menu.addAction('Insert after', lambda model=model, row=item.siblingIndex() + 1, item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
+    #     if item.is_container():
+    #         menu.addAction('Append child', lambda model=model, row=len(item.children), item=KeyValueTreeItem('New item', ''), parentIndex=index: model.insertItems(row, [item], parentIndex))
         
-        return menu
+    #     return menu
 
 
 class KeyValueTreeViewDelegate(QStyledItemDelegate):
@@ -178,10 +178,6 @@ def str_to_value(text: str) -> bool | int | float | str | tuple | list | dict:
 
 
 def test_live():
-    from pyqt_ext.tree import KeyValueDndTreeModel
-    
-    app = QApplication()
-
     data = {
         'a': 1,
         'b': [4, 8, (1, 5.5, True, 'good'), 5, 7, 99, True, False, 'hi', 'bye'],
@@ -195,17 +191,20 @@ def test_live():
             },
         },
     }
-    root = KeyValueTreeItem('/', data)
-    model = KeyValueDndTreeModel(root)
+
+    app = QApplication()
+    # root = KeyValueTreeItem(data)
+    model = KeyValueTreeModel(data)
     view = KeyValueTreeView()
-    view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
     view.setModel(model)
     view.show()
-    view.resize(QSize(400, 400))
-    model.keyChanged.connect(lambda: print(model.root()))
-    model.valueChanged.connect(lambda: print(model.root()))
-
+    view.resize(QSize(800, 600))
+    view.showAll()
+    # model.keyChanged.connect(lambda: print(model.root()))
+    # model.valueChanged.connect(lambda: print(model.root()))
     app.exec()
+
+    print(data)
 
 if __name__ == '__main__':
     test_live()

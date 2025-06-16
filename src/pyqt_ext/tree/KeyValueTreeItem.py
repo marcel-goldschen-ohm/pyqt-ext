@@ -1,185 +1,209 @@
-""" Data interface for a tree of key-value pairs.
+""" Data interface for a tree of key:value pairs.
 """
 
 from __future__ import annotations
+from warnings import warn
+from typing import Any
 from pyqt_ext.tree import AbstractTreeItem
 
 
 class KeyValueTreeItem(AbstractTreeItem):
     
-    def __init__(self, key: str | None, value, parent: KeyValueTreeItem | None = None) -> None:
-        self._key: str | None = key
-        self._value = value
-        AbstractTreeItem.__init__(self, parent=parent)
+    def __init__(self, data: dict | list | str | None, parent: KeyValueTreeItem | None = None) -> None:
+        # A key:value mapping (dict or list) if this is the root item.
+        # Otherwise a key into the parent item's key:value mapping (ignored if parent is a list).
+        self._data: dict | list | str | None = data
 
-        # recursively build subtree if value is itself a container with key,value access
+        AbstractTreeItem.__init__(self, parent=parent)
+        self.setupSubtree()
+    
+    def key(self) -> str | int | None:
+        if isinstance(self._data, dict) or isinstance(self._data, list):
+            # no key for the root key:value map
+            return
+        
+        # this item stores a key into its parent key:value map.
+        parent: KeyValueTreeItem = self.parent()
+        if parent is None:
+            # default to the stored key
+            return self._data or self.siblingIndex()
+        parent_map: dict | list = parent.value()
+        if isinstance(parent_map, dict):
+            # this item stores a key into the parent dict
+            return self._data
+        elif isinstance(parent_map, list):
+            # the list index is taken from the order of the parent item's children
+            return self.siblingIndex()
+    
+    def setKey(self, key: str) -> None:
+        if isinstance(self._data, dict) or isinstance(self._data, list):
+            # no key for the root key:value map
+            return
+        
+        # this item stores a key into its parent key:value map
+        parent: KeyValueTreeItem = self.parent()
+        if parent is None:
+            return
+        parent_map: dict | list = parent.value()
+        if isinstance(parent_map, dict):
+            # must have a valid key
+            if not key:
+                return
+            # only allow string keys for dict
+            key = str(key)
+            # check if key has changed
+            if key == self.key():
+                return
+            # make sure key is unique
+            if key in parent_map:
+                warn(f'Key {key} already exists.')
+                # key = unique_name(key, list(parent._map_or_key.keys()))
+                return
+            # swap keys in map
+            parent_map[key] = parent_map.pop(self.key())
+            # store new key in item
+            self._data = key
+        elif isinstance(parent_map, list):
+            # Keys are not used for lists.
+            # Instead, the sibling index is used as the list index.
+            return
+    
+    def value(self) -> Any:
+        if isinstance(self._data, dict) or isinstance(self._data, list):
+            # this item stores the root key:value map
+            return self._data
+        
+        # this item stores a key into its parent key:value map
+        parent: KeyValueTreeItem = self.parent()
+        if parent is None:
+            return
+        # get value from parent key:value mapping (dict or list)
+        parent_map: dict | list = parent.value()
+        if isinstance(parent_map, dict) or isinstance(parent_map, list):
+            return parent_map[self.key()]
+    
+    def setValue(self, value) -> None:
+        if isinstance(self._data, dict) or isinstance(self._data, list):
+            # this is the root item which must be a key:value map
+            if not isinstance(value, dict) and not isinstance(value, list):
+                return
+            # reset the entire tree
+            for child in self.children:
+                child._parent = None
+            self.children = []
+            self._data = value
+            self.setupSubtree()
+            return
+        
+        # this item stores a key into its parent key:value map
+        # remove any child items (in case this item was itself a key:value container)
+        for child in self.children:
+            child._parent = None
+        self.children = []
+        parent: KeyValueTreeItem = self.parent()
+        if parent is None:
+            self._data = value
+        else:
+            # set value in parent key:value mapping (dict or list)
+            parent_map: dict | list = parent.value()
+            parent_map[self.key()] = value
+        self.setupSubtree()
+    
+    def setupSubtree(self):
+        """ Recursively build subtree if value is itself a container with key:value access.
+        """
+        value = self.value()
         if isinstance(value, dict):
-            for key in value:
-                KeyValueTreeItem(key, value[key], parent=self)
+            for key in list(value.keys()):
+                KeyValueTreeItem(key, parent=self)
         elif isinstance(value, list):
             for i in range(len(value)):
                 # list keys are not explicitly set, they will default to the list index
-                KeyValueTreeItem(None, value[i], parent=self)
+                KeyValueTreeItem(None, parent=self)
+    
+    def name(self) -> str:
+        key = self.key()
+        return str(key) if key is not None else None
+    
+    def setName(self, name: str) -> None:
+        self.setKey(name)
     
     def __repr__(self):
-        if self.isBasicValue():
-            return f'{self.key}: {self.value}, <{type(self.value)}>'
-        return f'{self.key}: {type(self.value)}'
+        key = self.key()
+        value = self.value()
+        if isinstance(value, dict):
+            return f'{key}: {{}}'
+        elif isinstance(value, list):
+            return f'{key}: []'
+        else:
+            return f'{key}: {value}'
     
     def __str__(self) -> str:
         return self._tree_repr(lambda item: item.__repr__())
     
-    @property
-    def key(self) -> str | int:
-        # if parent is a list, the key is the index of this item in the list
-        parent: KeyValueTreeItem = self.parent
-        if (parent is not None) and parent.isList():
-            return self.siblingIndex()
-        # otherwise, return the local key
-        return self._key
-    
-    @key.setter
-    def key(self, key: str) -> None:
-        # update parent dict
-        parent: KeyValueTreeItem = self.parent
-        if parent is not None:
-            parent_container = parent.value
-            if isinstance(parent_container, dict):
-                parent_dict: dict = parent_container
-                # only allow string keys for dict
-                key = str(key)
-                # remove old key from parent dict
-                if (self.key is not None) and (self.key in parent_dict):
-                    parent_dict.pop(self.key)
-                # make sure key is unique
-                if key in parent_dict:
-                    key = unique_name(key, list(parent_dict.keys()))
-                # add new key to parent dict
-                parent_dict[key] = self.value
-            elif isinstance(parent_container, list):
-                # key is always the list index
-                return
-        # update local key
-        self._key = key
-    
-    @property
-    def value(self):
-        return self._value
-    
-    @value.setter
-    def value(self, value) -> None:
-        # remove any children
-        for child in self.children.copy():
-            self.removeChild(child)
-
-        # update parent dict or list
-        if self.parent is not None:
-            parent_container = self.parent.value
-            parent_container[self.key] = value
-        # update local value
-        self._value = value
-
-        # recursively build subtree if value is itself a container with key,value access
-        if isinstance(value, dict):
-            for key in value:
-                KeyValueTreeItem(key, value[key], parent=self)
-        elif isinstance(value, list):
-            for i in range(len(value)):
-                # list keys are not explicitly set, they will default to the list index
-                KeyValueTreeItem(None, value[i], parent=self)
-    
-    @AbstractTreeItem.parent.setter
-    def parent(self, parent: KeyValueTreeItem | None) -> None:
-        if self.parent is parent:
+    def setParent(self, parent: KeyValueTreeItem | None) -> None:
+        old_parent: KeyValueTreeItem | None = self.parent()
+        new_parent: KeyValueTreeItem | None = parent
+        if old_parent is new_parent:
+            # nothing to do
             return
-        if (parent is not None):
-            parent_container = parent.value
-            if not (isinstance(parent_container, dict) or isinstance(parent_container, list)):
-                raise ValueError('Parent must be a key[value] container (currently only dict or list supported).')
-
-        # remove value from old parent container
-        old_parent: KeyValueTreeItem | None = self.parent
-        if old_parent is not None:
-            old_parent_container = old_parent.value
-            # old_parent_container is a dict or list
-            old_parent_container.pop(self.key)
+        if new_parent is not None:
+            if new_parent.hasAncestor(self):
+                raise ValueError('Cannot set parent to a descendant.')
+            # the new parent must be a key:value container
+            new_parent_value = new_parent.value()
+            if not isinstance(new_parent_value, dict) and not isinstance(new_parent_value, list):
+                raise ValueError('Parent must be a key:value mapping (dict or list).')
         
-        # insert value into new parent container
-        if parent is not None:
-            parent_container = parent.value
-            if isinstance(parent_container, dict):
-                existing_sibling_item_keys = [child.key for child in parent.children]
-                if self.key in existing_sibling_item_keys:
-                    # add key[value] pair without overwritting existing key[value] pair
-                    self._key = unique_name(self.key, existing_sibling_item_keys)
-                # if the parent dict alreayd has this key[value pair], this won't do anything
-                parent_container[self.key] = self.value
-            elif isinstance(parent_container, list):
-                index = len(parent.children)
-                if len(parent_container) <= index:
-                    parent_container.append(self.value)
-                else:
-                    # parent list already has data at this position (probably this value already)
-                    parent_container[index] = self.value
-
-        # update item tree linkage
-        AbstractTreeItem.parent.fset(self, parent)
+        value = self.value()
+        
+        if old_parent is not None:
+            # detach from old parent
+            old_parent_map: dict | list = old_parent.value()
+            old_parent_map.pop(self.key())
+            old_parent.children.remove(self)
+        
+        if new_parent is None:
+            # root items must have a key:value mapping
+            if isinstance(value, dict) or isinstance(value, list):
+                self._data = value
+            self._parent = None
+        else:
+            # attach to new parent (appends as last child)
+            new_parent.children.append(self)
+            self._parent = new_parent
+            new_parent_map: dict | list = new_parent.value()
+            # update new parent key:value mapping
+            if isinstance(new_parent_map, dict):
+                key = self.key()
+                if value is None:
+                    value = self.value()
+                # print('data:', self._data, 'key:', key, 'value:', value, 'parent dict:', new_parent_map)
+                if (key not in new_parent_map) or (new_parent_map[key] is not value):
+                    new_parent_map[key] = value
+            elif isinstance(new_parent_map, list):
+                key = self.key()
+                if value is None:
+                    value = self.value()
+                # print('data:', self._data, 'key:', key, 'value:', value, 'parent list:', new_parent_map)
+                if len(new_parent_map) <= self.siblingIndex():
+                    new_parent_map.append(value)
     
-    @AbstractTreeItem.name.getter
-    def name(self) -> str:
-        return str(self.key)
-    
-    def isContainer(self) -> bool:
-        return self.isDict() or self.isList()
-    
-    def isDict(self) -> bool:
-        return isinstance(self.value, dict)
-    
-    def isList(self) -> bool:
-        return isinstance(self.value, list)
-    
-    def isBasicValue(self) -> bool:
-        return not self.isContainer()
-    
-    def insertChild(self, index: int, item: KeyValueTreeItem) -> bool:
-        if not AbstractTreeItem.insertChild(self, index, item):
-            return False
-        if isinstance(self.value, list):
-            # above appends item.value to self.value
-            pos = len(self.value) - 1
-            # if needed, move item.value to index in self.value
+    def insertChild(self, index: int, child: KeyValueTreeItem) -> None:
+        if not (0 <= index <= len(self.children)):
+            raise IndexError('Index out of range.')
+        # append as last child
+        child.setParent(self)
+        # move item to index
+        pos = self.children.index(child)
+        if pos != index:
+            if pos < index:
+                index -= 1
             if pos != index:
-                if pos < index:
-                    index -= 1
-                if pos != index:
-                    self.value.insert(index, self.value.pop(pos))
-        return True
-    
-    def data(self, column: int):
-        if column == 0:
-            return self.key
-        elif column == 1:
-            return self.value
-    
-    def setData(self, column: int, value) -> bool:
-        if column == 0:
-            self.key = value
-            return True
-        elif column == 1:
-            self.value = value
-            return True
-        return False
-
-
-def unique_name(name: str, names: list[str]) -> str:
-    if name not in names:
-        return name
-    i: int = 1
-    uname = f'{name}_{i}'
-    while uname in names:
-        i += 1
-        uname = f'{name}_{i}'
-    return uname
+                this_map: dict | list = self.value()
+                if isinstance(this_map, list):
+                    this_map.insert(index, this_map.pop(pos))
+                self.children.insert(index, self.children.pop(pos))
 
 
 def test_tree():
@@ -196,44 +220,55 @@ def test_tree():
             },
         },
     }
-    root = KeyValueTreeItem('/', data)
-    print('-'*82, root)
+    root = KeyValueTreeItem(data)
+    print('-'*82)
+    print(root)
+    import json
+    print(json.dumps(data, indent='    '))
 
+    print('-'*82)
+    print('remove /a')
     root.removeChild(root['/a'])
-    print('\nremove /a')
     print(root)
 
+    print('-'*82)
+    print('remove /c/d/f')
     d = root['c/d']
     f = root['c/d/f']
     d.removeChild(f)
-    print('\nremove /c/d/f')
     print(root)
 
-    d.parent = root
-    print('\nmove /c/d to /d')
+    print('-'*82)
+    print('move /c/d to /d')
+    d.setParent(root)
     print(root)
 
+    print('-'*82)
+    print('move /d to 2nd child of /')
     root.insertChild(1, d)
-    print('\nmove /d to 2nd child of /')
     print(root)
 
+    print('-'*82)
+    print('move /d to 3rd child of /b')
     b = root['b']
     b.insertChild(2, d)
-    print('\nmove /d to 3rd child of /b')
     print(root)
 
+    print('-'*82)
+    print('remove /b/1')
     b.removeChild(b['1'])
-    print('\nremove /b/1')
     print(root)
 
+    print('-'*82)
+    print('/c/me:hi -> /c/me:bye')
     c = root['c']
-    c.children[0].value = 'bye'
-    print('\n/c/me:hi -> /c/me:bye')
+    c.children[0].setValue('bye')
     print(root)
     print(c)
 
+    print('-'*82)
+    print('move /b/1 to first child of /c')
     c.insertChild(0, b['1'])
-    print('\nmove /b/1 to first child of /c')
     print(root)
 
 
