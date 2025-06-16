@@ -338,7 +338,7 @@ class TreeView(QTreeView):
     
     def dragEnterEvent(self, event: QDragEnterEvent) -> None:
         mime_data = event.mimeData()
-        if isinstance(mime_data, AbstractTreeMimeData) and mime_data.model is self.model():
+        if isinstance(mime_data, AbstractTreeMimeData) and (mime_data.model is self.model()):
             # Store the current state of the dragged paths and all their descendent paths in the MIME data.
             # We only want to do this for the model where the drag was initiated (i.e., mime_data.model).
             # We'll use this stored state in the dropEvent to restore the view of the dropped items.
@@ -360,7 +360,7 @@ class TreeView(QTreeView):
     
     def selectedPaths(self) -> list[str]:
         items: list[AbstractTreeItem] = self.selectedItems()
-        paths: list[str] = [item.path for item in items]
+        paths: list[str] = [item.path() for item in items]
         return paths
     
     def setSelectedPaths(self, paths: list[str]):
@@ -398,7 +398,7 @@ def test_live():
     root.children[1].appendChild(AbstractTreeItem())
     root.children[1].appendChild(AbstractTreeItem())
     grandchild2 = AbstractTreeItem(name='grandchild2')
-    grandchild2.parent = root['child2']
+    grandchild2.setParent(root['child2'])
     AbstractTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
     print(root)
 
