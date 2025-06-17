@@ -1,8 +1,9 @@
 """ Base class for a tree model that uses AbstractTreeItem for its data interface.
 
+Supports drag-and-drop within and between models in the same program/process.
+
 TODO:
-- fix drag-and-drop bug
-- move items between different models
+- move/copy items between different models
 """
 
 from __future__ import annotations
@@ -645,18 +646,6 @@ class AbstractTreeModel(QAbstractItemModel):
         
     #     # TODO... implement transfer between different tree models
     #     raise NotImplementedError
-    
-    @staticmethod
-    def uniqueName(name: str, names: list[str], unique_counter_start: int = 2) -> str:
-        if name not in names:
-            return name
-        base_name = name
-        i = unique_counter_start
-        name = f'{base_name}_{i}'
-        while name in names:
-            i += 1
-            name = f'{base_name}_{i}'
-        return name
 
 
 class AbstractTreeMimeData(QMimeData):

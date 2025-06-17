@@ -1,7 +1,4 @@
-""" Editable tree view for an `AbstractTreeModel` with drag-and-drop, context menu, and mouse wheel expand/collapse.
-
-TODO:
-- fix drag-and-drop bug
+""" Tree view for an `AbstractTreeModel` with drag-and-drop, context menu, and mouse wheel expand/collapse.
 """
 
 from __future__ import annotations

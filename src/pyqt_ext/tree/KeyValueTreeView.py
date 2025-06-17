@@ -1,4 +1,4 @@
-""" Editable tree view for a `KeyValueTreeModel` with drag-and-drop, context menu, and mouse wheel expand/collapse.
+""" Tree view for a `KeyValueTreeModel` with drag-and-drop, context menu, and mouse wheel expand/collapse.
 """
 
 from __future__ import annotations
