@@ -1,4 +1,6 @@
 """ Data interface for a tree of key:value pairs.
+
+e.g., Any level of nesting of dict and list objects.
 """
 
 from __future__ import annotations

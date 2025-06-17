@@ -1,4 +1,4 @@
-""" Tree view for an `AbstractTreeModel` with context menu and mouse wheel expand/collapse.
+""" Editable tree view for an `AbstractTreeModel` with drag-and-drop, context menu, and mouse wheel expand/collapse.
 
 TODO:
 - fix drag-and-drop bug

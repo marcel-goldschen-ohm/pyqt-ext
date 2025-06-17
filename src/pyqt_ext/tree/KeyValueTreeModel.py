@@ -1,4 +1,7 @@
-""" Tree model for key:value pairs that uses KeyValueTreeItem for its data interface.
+""" Tree model for a tree of key:value pairs that uses `KeyValueTreeItem`for its data interface.
+
+e.g., Any level of nesting of dict and list objects.
+Supports drag-and-drop within and between models in the same program/process.
 """
 
 from __future__ import annotations
