@@ -1,54 +1,59 @@
 from __future__ import annotations
-from qtpy.QtWidgets import QApplication
-from qtpy.QtCore import QObject, QModelIndex
-from pyqt_ext.tree import AbstractTreeItem, AbstractDndTreeModel, TreeView
+from qtpy.QtWidgets import *
+from qtpy.QtCore import *
+from pyqt_ext.tree import AbstractTreeItem, AbstractTreeModel, TreeView
 
 
 class CustomTreeItem(AbstractTreeItem):
-    """ Custom tree item for an editable tree with two columns: name, data.
-    
-    Contains a `data` attribute to store the data for each item and implementations of `get_data` and `set_data` methods for an editable tree with two columns: name, data.
+    """ Custom tree item with arbitrary data stored in the `data` attribute.
     """
 
     def __init__(self, data = None, name: str = None, parent: CustomTreeItem = None):
         # the data associated with this tree item
         self.data = data
+        
         # tree linkage
         AbstractTreeItem.__init__(self, name, parent)
     
     def __repr__(self):
-        return f'{self.name}: {self.data}'
-    
-    # For an editable tree with two columns: name, data...
-
-    def data(self, column: int):
-        if column == 0:
-            return self.name
-        elif column == 1:
-            return self.data
-    
-    def setData(self, column: int, value) -> bool:
-        if column == 0:
-            self.name = value
-            return True
-        elif column == 1:
-            self.data = value
-            return True
-        return False
+        return f'{self.name()}: {self.data}'
 
 
-class CustomDndTreeModel(AbstractDndTreeModel):
-    """ Custom tree model (with drag and drop) for an editable tree with two columns.
+class CustomTreeModel(AbstractTreeModel):
+    """ Custom tree model with two columns (Name, Data).
     """
 
-    def __init__(self, root: CustomTreeItem = None, parent: QObject = None):
-        AbstractDndTreeModel.__init__(self, root, parent)
-        # column titles
+    def __init__(self, *args, **kwargs):
+        AbstractTreeModel.__init__(self, *args, **kwargs)
         self.setColumnLabels(['Name', 'Data'])
 
     def columnCount(self, parent_index: QModelIndex = QModelIndex()) -> int:
-        # for [name, data] columns
         return 2
+
+    def data(self, index: QModelIndex, role: int):
+        if not index.isValid():
+            return
+        item: CustomTreeItem = self.itemFromIndex(index)
+        if role == Qt.ItemDataRole.DisplayRole or role == Qt.ItemDataRole.EditRole:
+            if index.column() == 0:
+                return item.name()
+            elif index.column() == 1:
+                return item.data
+
+    def setData(self, index: QModelIndex, value, role: int) -> bool:
+        if not index.isValid():
+            return False
+        item: CustomTreeItem = self.itemFromIndex(index)
+        if role == Qt.ItemDataRole.EditRole:
+            if index.column() == 0:
+                item.setName(value)
+                self.dataChanged.emit(index, index)  # ?? needed?
+                return True
+            elif index.column() == 1:
+                item.data = value
+                self.dataChanged.emit(index, index)  # ?? needed?
+                return True
+        return False
 
 
 # Create the application
@@ -69,8 +74,8 @@ print('\nDepth first iteration...')
 for item in root.depthFirst():
     print(item.name)
 
-# Tree model with drag and drop enabled...
-model = CustomDndTreeModel(root)
+# Tree model with support for drag-and-drop within and between models...
+model = CustomTreeModel(root)
 
 # To access the underlying item tree...
 #root = model.root()
