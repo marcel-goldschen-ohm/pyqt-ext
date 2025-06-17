@@ -99,20 +99,3 @@ class KeyValueTreeModel(AbstractTreeModel):
                     self.endResetModel()
                 return True
         return False
-
-
-class KeyValueTreeMimeData(AbstractTreeMimeData):
-    """ Custom MIME data class for drag-and-drop with `AbstractTreeModel`s.
-
-    This class allows storing a reference to an `AbstractTreeModel` and some of its `AbstractTreeItem`s (i.e., the items being dragged during drag-and-drop) in the MIME data.
-    This allows simple transfer of tree items within and between `AbstractTreeModel`s in the same program/process.
-
-    Note:
-    This approach probably won't work if you need to pass items between `AbstractTreeModel`s in separate programs/processes.
-    If you really need to do this, you need to somehow serialize the dragged items (maybe with pickle), pass the serialized bytes in the drag MIME data, then deserialize back to the items on drop.
-    """
-
-    MIME_TYPE = 'application/x-key-value-tree-model-items'
-
-    def __init__(self, model: AbstractTreeModel, items: list[KeyValueTreeItem]):
-        AbstractTreeMimeData.__init__(self, model, items)
