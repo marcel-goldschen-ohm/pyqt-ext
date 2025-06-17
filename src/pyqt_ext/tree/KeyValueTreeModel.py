@@ -85,9 +85,15 @@ class KeyValueTreeModel(AbstractTreeModel):
                 self.dataChanged.emit(index, index)
                 return True
             elif index.column() == 1:
-                self.beginResetModel()
-                item.setValue(value)
-                self.endResetModel()
+                if item.isLeaf():
+                    # a basic value, not a key:value map
+                    item.setValue(value)
+                    self.dataChanged.emit(index, index)
+                else:
+                    # a key:value map
+                    self.beginResetModel()
+                    item.setValue(value)
+                    self.endResetModel()
                 return True
         return False
 

@@ -28,30 +28,17 @@ class TreeView(QTreeView):
         sizePolicy.setVerticalPolicy(QSizePolicy.Policy.Expanding)
         self.setSizePolicy(sizePolicy)
         self.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContents)
-        # self.setAlternatingRowColors(True)
 
         # selection
-        # self.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
         # drag-n-drop
         self.setDragAndDropEnabled(True)
 
-        # context menu
+        # context menu defined in customContextMenu()
         self.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.customContextMenuRequested.connect(self.onCustomContextMenuRequested)
-
-        # These menu action (text, function(item), condition(item) -> bool) tuples will be used to populate each item's context menu.
-        # If {item} is in the text, it will be replaced by the item's tree path.
-        # If text includes '/', create a submenu (nested submenus are NOT supported).
-        # '---' without any function is treated as a separator.
-        # The callbacks function(item) and condition(item) should take the item as sole argument.
-        # If condition is not None, only include this action if condition(item) == True.
-        self._itemContextMenuFunctions: list[tuple[str, Callable[[AbstractTreeItem]], Callable[[AbstractTreeItem]]]] = [
-            ('{item}/Remove', lambda item, self=self: self.askToRemoveItems([item]), None),
-            ('---', None, None), # to separate this stuff from the rest of the default context menu
-        ]
     
     def refresh(self) -> None:
         self.storeState()
@@ -214,39 +201,21 @@ class TreeView(QTreeView):
         menu = QMenu(self)
 
         # context menu for item that was clicked on
-        if index.isValid() and len(self._itemContextMenuFunctions) > 0:
+        if index.isValid():
             item: AbstractTreeItem = model.itemFromIndex(index)
-            label = self.truncateLabel(item.path)
-            submenus: dict[str, QMenu] = {}
-            for key, func, condition in self._itemContextMenuFunctions:
-                if condition is not None:
-                    if not condition(item):
-                        continue
-                
-                submenu_name = ''
-                if '/' in key:
-                    submenu_name, key = key.split('/')
-                if '{item}' in submenu_name:
-                    submenu_name = submenu_name.replace('{item}', label)
-                if '{item}' in key:
-                    key = key.replace('{item}', label)
-                item_menu = menu
-                if submenu_name:
-                    if submenu_name not in submenus:
-                        submenus[submenu_name] = menu.addMenu(submenu_name)
-                    item_menu = submenus[submenu_name]
-                
-                if key == '---' and func is None:
-                    item_menu.addSeparator()
-                elif func:
-                    item_menu.addAction(key, lambda item=item, func=func: func(item))
-                else:
-                    action = item_menu.addAction(key)
-                    action.setEnabled(False)
+            item_label = self.truncateLabel(item.path())
+            menu.addAction(f'Remove {item_label}', lambda item: self.askToRemoveItems([item]))
+            menu.addSeparator()
         
+        self.appendDefaultContextMenu(menu)
+        return menu
+    
+    def appendDefaultContextMenu(self, menu: QMenu) -> None:
+        """ Append the default context menu items to the input menu.
+        """
         menu.addAction('Expand All', self.expandAll)
         menu.addAction('Collapse All', self.collapseAll)
-        if model.columnCount() > 1:
+        if self.model().columnCount() > 1:
             menu.addAction('Resize Columns to Contents', self.resizeAllColumnsToContents)
             menu.addAction('Show All', self.showAll)
         
@@ -261,8 +230,6 @@ class TreeView(QTreeView):
 
         menu.addSeparator()
         menu.addAction('Refresh', self.refresh)
-        
-        return menu
     
     def truncateLabel(self, label: str, max_length: int = 50) -> str:
         """ Truncate long strings from the beginning.

@@ -30,6 +30,11 @@ class KeyValueTreeItem(AbstractTreeItem):
         parent_map: dict | list = parent.value()
         if isinstance(parent_map, dict):
             # this item stores a key into the parent dict
+            if (self._data is None) or (self._data == ''):
+                # ensure a valid key
+                key = self.uniqueName('?', list(parent_map.keys()))
+                parent_map[key] = None
+                self._data = key
             return self._data
         elif isinstance(parent_map, list):
             # the list index is taken from the order of the parent item's children
@@ -47,17 +52,19 @@ class KeyValueTreeItem(AbstractTreeItem):
         parent_map: dict | list = parent.value()
         if isinstance(parent_map, dict):
             # must have a valid key
-            if not key:
+            if key is None:
+                key = 'None'
+            elif key == '':
                 return
-            # only allow string keys for dict
-            key = str(key)
+            elif type(key) not in [str, int, float, bool]:
+                return
             # check if key has changed
             if key == self.key():
                 return
             # make sure key is unique
             if key in parent_map:
                 warn(f'Key {key} already exists.')
-                # key = unique_name(key, list(parent._map_or_key.keys()))
+                # key = self.uniqueName(key, list(parent_map.keys()))
                 return
             # swap keys in map
             parent_map[key] = parent_map.pop(self.key())
@@ -80,7 +87,10 @@ class KeyValueTreeItem(AbstractTreeItem):
         # get value from parent key:value mapping (dict or list)
         parent_map: dict | list = parent.value()
         if isinstance(parent_map, dict) or isinstance(parent_map, list):
-            return parent_map[self.key()]
+            try:
+                return parent_map[self.key()]
+            except (KeyError, IndexError):
+                return
     
     def setValue(self, value) -> None:
         if isinstance(self._data, dict) or isinstance(self._data, list):
@@ -176,16 +186,19 @@ class KeyValueTreeItem(AbstractTreeItem):
             # update new parent key:value mapping
             if isinstance(new_parent_map, dict):
                 key = self.key()
+                if (key is None) or (key == ''):
+                    # ensure valid dict key
+                    sibling_names = [sibling.name for sibling in self.siblings()]
+                    key = self.uniqueName('?', sibling_names)
                 if value is None:
                     value = self.value()
                 # print('data:', self._data, 'key:', key, 'value:', value, 'parent dict:', new_parent_map)
                 if (key not in new_parent_map) or (new_parent_map[key] is not value):
                     new_parent_map[key] = value
             elif isinstance(new_parent_map, list):
-                key = self.key()
                 if value is None:
                     value = self.value()
-                # print('data:', self._data, 'key:', key, 'value:', value, 'parent list:', new_parent_map)
+                # print('data:', self._data, 'value:', value, 'parent list:', new_parent_map)
                 if len(new_parent_map) <= self.siblingIndex():
                     new_parent_map.append(value)
     

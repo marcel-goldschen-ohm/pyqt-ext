@@ -2,11 +2,11 @@
 """
 
 from __future__ import annotations
+from typing import Callable
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from pyqt_ext.tree import TreeView, KeyValueTreeItem, KeyValueTreeModel
-# from pyqt_ext.tree.KeyValueTreeItem import unique_name
 
 
 class KeyValueTreeView(TreeView):
@@ -17,25 +17,60 @@ class KeyValueTreeView(TreeView):
         # delegate
         self.setItemDelegate(KeyValueTreeViewDelegate(self))
     
-    # def customContextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu:
-    #     menu: QMenu = TreeView.customContextMenu(self, index)
-       
-    #     model: KeyValueTreeModel = self.model()
+    def customContextMenu(self, index: QModelIndex = QModelIndex()) -> QMenu | None:
+        model: KeyValueTreeModel = self.model()
+        if model is None:
+            return
         
-    #     if not index.isValid():
-    #         if model.root() is not None:
-    #             menu.addSeparator()
-    #             menu.addAction('Add item', lambda model=model, row=len(model.root().children), item=KeyValueTreeItem('New item', ''), parentIndex=QModelIndex(): model.insertItems(row, [item], parentIndex))
-    #         return menu
+        menu = QMenu(self)
+
+        # context menu for item that was clicked on
+        if index.isValid():
+            item: KeyValueTreeItem = model.itemFromIndex(index)
+            item_label = self.truncateLabel(item.path())
+            menu.addAction(f'Insert New Item Before', lambda item=item: self.insertNewSiblingBefore(item))
+            menu.addAction(f'Insert New Item After', lambda item=item: self.insertNewSiblingAfter(item))
+            if not item.isLeaf():
+                menu.addAction(f'Add New Child Item', lambda item=item: self.appendNewChild(item))
+            menu.addSeparator()
+            menu.addAction(f'Remove {item_label}', lambda item=item: self.askToRemoveItems([item]))
+            menu.addSeparator()
+        else:
+            item: KeyValueTreeItem = model.root()
+            menu.addAction(f'Add New Item', lambda item=item: self.appendNewChild(item))
+            menu.addSeparator()
         
-    #     item: KeyValueTreeItem = model.itemFromIndex(index)
-    #     menu.addSeparator()
-    #     menu.addAction('Insert before', lambda model=model, row=item.siblingIndex(), item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
-    #     menu.addAction('Insert after', lambda model=model, row=item.siblingIndex() + 1, item=KeyValueTreeItem('New item', ''), parentIndex=model.parent(index): model.insertItems(row, [item], parentIndex))
-    #     if item.is_container():
-    #         menu.addAction('Append child', lambda model=model, row=len(item.children), item=KeyValueTreeItem('New item', ''), parentIndex=index: model.insertItems(row, [item], parentIndex))
+        self.appendDefaultContextMenu(menu)
+        return menu
+    
+    def insertNewItem(self, parent_item: KeyValueTreeItem, row: int = -1) -> None:
+        model: KeyValueTreeModel = self.model()
+        if model is None:
+            return
         
-    #     return menu
+        parent_map: dict | list = parent_item.value()
+        if isinstance(parent_map, dict):
+            key = parent_item.uniqueName('New', list(parent_map.keys()))
+        else:
+            key = None
+        if row == -1:
+            row = len(parent_item.children)
+        new_item = KeyValueTreeItem(key)
+        model.insertItems(row, [new_item], parent_item)
+    
+    def insertNewSiblingBefore(self, item: KeyValueTreeItem) -> None:
+        parent_item: KeyValueTreeItem = item.parent()
+        row: int = item.siblingIndex()
+        self.insertNewItem(parent_item, row)
+    
+    def insertNewSiblingAfter(self, item: KeyValueTreeItem) -> None:
+        parent_item: KeyValueTreeItem = item.parent()
+        row: int = item.siblingIndex() + 1
+        self.insertNewItem(parent_item, row)
+    
+    def appendNewChild(self, parent_item: KeyValueTreeItem) -> None:
+        row: int = -1
+        self.insertNewItem(parent_item, row)
 
 
 class KeyValueTreeViewDelegate(QStyledItemDelegate):
@@ -46,7 +81,7 @@ class KeyValueTreeViewDelegate(QStyledItemDelegate):
     def __init__(self, parent: QObject = None):
         QStyledItemDelegate.__init__(self, parent)
     
-    def createEditor(self, parent, option, index):
+    def createEditor(self, parent: QWidget, option: QStyleOptionViewItem, index: QModelIndex):
         data = index.model().data(index, Qt.ItemDataRole.EditRole)
         if type(data) in [int, float, bool, str]:
             editor = QLineEdit(parent)
@@ -67,7 +102,7 @@ class KeyValueTreeViewDelegate(QStyledItemDelegate):
         #     return None
         return QStyledItemDelegate.createEditor(self, parent, option, index)
 
-    def paint(self, painter, option, index):
+    def paint(self, painter: QPainter, option: QStyleOptionViewItem, index: QModelIndex):
         data = index.model().data(index, Qt.ItemDataRole.DisplayRole)
         if type(data) in [tuple, list, bool]:
             if isinstance(data, tuple):
@@ -76,7 +111,7 @@ class KeyValueTreeViewDelegate(QStyledItemDelegate):
                 text = '[' + ', '.join(str(value) for value in data) + ']'
             elif isinstance(data, bool):
                 text = ' ' + str(data)
-            if option.state & QStyle.State_Selected:
+            if option.state & QStyle.StateFlag.State_Selected:
                 painter.fillRect(option.rect, option.palette.highlight())
                 painter.setPen(option.palette.highlightedText().color())
             else:
@@ -101,7 +136,7 @@ class KeyValueTreeViewDelegate(QStyledItemDelegate):
         #     return
         return QStyledItemDelegate.paint(self, painter, option, index)
 
-    def editorEvent(self, event, model, option, index):
+    def editorEvent(self, event: QEvent, model: KeyValueTreeModel, option: QStyleOptionViewItem, index: QModelIndex):
         # data = index.model().data(index, Qt.ItemDataRole.EditRole)
         # if isinstance(data, bool):
         #     # handle checkbox events
@@ -118,18 +153,23 @@ class KeyValueTreeViewDelegate(QStyledItemDelegate):
         #     return False
         return QStyledItemDelegate.editorEvent(self, event, model, option, index)
 
-    def setModelData(self, editor, model, index):
-        data = index.model().data(index, Qt.ItemDataRole.EditRole)
-        if type(data) in [dict, list] and len(data) > 0:
-            answer = QMessageBox.question(self.parent(), 'Overwrite?', 'Overwrite non-empty container?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+    def setModelData(self, editor: QWidget, model: KeyValueTreeModel, index: QModelIndex):
+        item: KeyValueTreeItem = model.itemFromIndex(index)
+        old_value = item.value()
+        if type(old_value) in [dict, list] and len(old_value) > 0:
+            answer = QMessageBox.question(self.parent(), 'Overwrite?', 'Overwrite non-empty key:value map?', QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
             if answer == QMessageBox.StandardButton.No:
                 return
         if isinstance(editor, QLineEdit):
-            value = str_to_value(editor.text())
-            model.setData(index, value, Qt.ItemDataRole.EditRole)
-            if type(value) in [dict, list] or type(data) in [dict, list]:
+            new_value = str_to_value(editor.text())
+            # did change involves a key:value map?
+            mapping_changed = (type(old_value) in [dict, list]) or (type(new_value) in [dict, list])
+            if mapping_changed:
                 view: KeyValueTreeView = self.parent()
-                view.resetModel()
+                view.storeState()
+            model.setData(index, new_value, Qt.ItemDataRole.EditRole)
+            if mapping_changed:
+                view.restoreState()
             return
         # elif isinstance(data, bool):
         #     checked = not data
@@ -204,7 +244,8 @@ def test_live():
     # model.valueChanged.connect(lambda: print(model.root()))
     app.exec()
 
-    print(data)
+    import json
+    print(json.dumps(data, indent='    '))
 
 if __name__ == '__main__':
     test_live()

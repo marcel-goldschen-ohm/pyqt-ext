@@ -167,8 +167,8 @@ class AbstractTreeItem():
         Derived classes that need to mirror changes in the tree structure to their data 
         should reimplement parent.setter.
         
-        Note: Together, parent.setter and insert_child cover all needed tree restructuring.
-        See append_child, insert_child, and remove_child.
+        Note: Together, setParent and insertChild cover all needed tree restructuring.
+        See appendChild, insertChild, and removeChild.
         """
         if self.parent() is parent:
             # nothing to do
@@ -265,26 +265,6 @@ class AbstractTreeItem():
                 return True
             item = item.parent()
         return False
-
-    # misc --------------------------------------------------
-
-    def depth(self, root: AbstractTreeItem = None) -> int:
-        # Return depth of this item in the branch starting at root (or entire tree if root is None).
-        depth: int = 0
-        item: AbstractTreeItem = self
-        while (item.parent() is not None) and (item is not root):
-            depth += 1
-            item = item.parent()
-        return depth
-    
-    def maxDepthBelow(self) -> int:
-        # Return the maximum depth within this item's branch.
-        max_depth: int = 0
-        for item in self.leaves():
-            depth: int = item.depth(self)
-            if depth > max_depth:
-                max_depth = depth
-        return max_depth
     
     # tree mutation --------------------------------------------------
 
@@ -401,6 +381,40 @@ class AbstractTreeItem():
         while item.children:
             item = item.lastChild()
         return item
+
+    # misc --------------------------------------------------
+
+    def depth(self, root: AbstractTreeItem = None) -> int:
+        # Return depth of this item in the branch starting at root (or entire tree if root is None).
+        depth: int = 0
+        item: AbstractTreeItem = self
+        while (item.parent() is not None) and (item is not root):
+            depth += 1
+            item = item.parent()
+        return depth
+    
+    def maxDepthBelow(self) -> int:
+        # Return the maximum depth within this item's branch.
+        max_depth: int = 0
+        for item in self.leaves():
+            depth: int = item.depth(self)
+            if depth > max_depth:
+                max_depth = depth
+        return max_depth
+    
+    @staticmethod
+    def uniqueName(name: str, names: list[str], unique_counter_start: int = 2) -> str:
+        """ May be useful for trees that require unique paths (i.e., sibling names).
+        """
+        if name not in names:
+            return name
+        base_name = name
+        i = unique_counter_start
+        name = f'{base_name}_{i}'
+        while name in names:
+            i += 1
+            name = f'{base_name}_{i}'
+        return name
 
 
 def test_tree():
