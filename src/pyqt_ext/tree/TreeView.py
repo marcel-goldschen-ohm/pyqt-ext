@@ -201,7 +201,7 @@ class TreeView(QTreeView):
         if index.isValid():
             item: AbstractTreeItem = model.itemFromIndex(index)
             item_label = self.truncateLabel(item.path())
-            menu.addAction(f'Remove {item_label}', lambda item: self.askToRemoveItems([item]))
+            menu.addAction(f'Remove {item_label}', lambda item=item: self.askToRemoveItems([item]))
             menu.addSeparator()
         
         self.appendDefaultContextMenu(menu)
