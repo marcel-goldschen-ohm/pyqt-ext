@@ -32,7 +32,6 @@ pyqtgraph = [
     "pyqtgraph>=0.13.3",
 ]
 all = [
-    "PySide6>=6.9",
     "pyqtgraph>=0.13.3",
 ]
 
