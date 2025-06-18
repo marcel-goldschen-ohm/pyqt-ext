@@ -25,11 +25,15 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-PySide6 = ["PySide6>=6.9"]
+PySide6 = [
+    "PySide6>=6.9",
+]
 pyqtgraph = [
     "pyqtgraph>=0.13.3",
-    "scipy>=1.11.4",
-    "lmfit>=1.2.2",
+]
+all = [
+    "PySide6>=6.9",
+    "pyqtgraph>=0.13.3",
 ]
 
 [project.urls]
