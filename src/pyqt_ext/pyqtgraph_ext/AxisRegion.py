@@ -22,7 +22,7 @@ class AxisRegion(pg.LinearRegionItem):
 
     sigRegionDragFinished = Signal(object)
     sigEditingFinished = Signal(object)
-    sigRequestDeletion = Signal(object)
+    sigDeletionRequested = Signal(object)
 
     def __init__(self, *args, **kwargs):
         if 'orientation' not in kwargs:
@@ -46,43 +46,46 @@ class AxisRegion(pg.LinearRegionItem):
         self.lines[0].sigClicked.connect(self.onEdgeClicked)
         self.lines[1].sigClicked.connect(self.onEdgeClicked)
 
-        self._group = ''
-
         # update label position when region is moved or resized
         # TODO: disallow dragging label outside of viewbox
         self.sigRegionChanged.connect(self.updateLabelPosition)
         # self.sigRegionChangeFinished.connect(lambda self=self: self.storeState())
 
         self.setZValue(11)
+
+        self.contextMenu = QMenu(self.__class__.__name__)
+        self.contextMenu.addAction('Edit Region', lambda: self.editDialog(self.getViewWidget()))
+        self.contextMenu.addSeparator()
+        self._movableAction = self.contextMenu.addAction('Movable', lambda: self.toggleMovable())
+        self._movableAction.setCheckable(True)
+        self._movableAction.setChecked(self.movable)
+        self.contextMenu.addSeparator()
+        self.contextMenu.addAction('Delete Region', lambda: self.sigDeletionRequested.emit(self))
+
+        self.includeParentContextMenus = False
     
-    def getState(self, dim: str = None) -> dict:
+    def getState(self) -> dict:
         """ Return hashable dict for saving and restoring state.
         """
-        return {
-            'region': self.getRegion() if dim is None else {dim: self.getRegion()},
-            'text': self.text(),
+        state = {
+            'position': self.getRegion(),
             'movable': self.movable,
-            'group': self.group(),
+            'text': self.text(),
             'format': self.getFormat(),
         }
+        return state
     
-    def setState(self, state: dict, dim: str = None):
+    def setState(self, state: dict):
         """ Restore state from hashable dict.
         """
         for key, value in state.items():
             key = key.lower()
-            if key == 'region':
-                if isinstance(value, dict):
-                    if dim is None:
-                        raise KeyError('Dimension must be specified when region is a dict')
-                    value = value[dim]
+            if key == 'position':
                 self.setRegion(value)
-            elif key == 'text':
-                self.setText(value)
             elif key == 'movable':
                 self.setMovable(value)
-            elif key == 'group':
-                self.setGroup(value)
+            elif key == 'text':
+                self.setText(value)
             elif key == 'format':
                 self.setFormat(value)
     
@@ -128,64 +131,21 @@ class AxisRegion(pg.LinearRegionItem):
                 self.setFontColor(toQColor(value))
     
     def storeState(self):
-        dim = getattr(self, '_dim', None)
-        self._state = self.getState(dim=dim)
+        self._state = self.getState()
     
     def restoreState(self):
         if not hasattr(self, '_state'):
             raise AttributeError('State has not been stored')
-        dim = getattr(self, '_dim', None)
-        self.setState(self._state, dim=dim)
+        self.setState(self._state)
     
-    # def setRegion(self, rgn):
-    #     """ Override default method to avoid emitting sigRegionChangeFinished
-    #     which we only want to emit after a drag event.
-    #     """
-    #     if self.lines[0].value() == rgn[0] and self.lines[1].value() == rgn[1]:
-    #         return
-    #     self.blockLineSignal = True
-    #     self.lines[0].setValue(rgn[0])
-    #     # self.blockLineSignal = False
-    #     self.lines[1].setValue(rgn[1])
-    #     self.blockLineSignal = False
-    #     self.lineMoved(0)
-    #     self.lineMoved(1)
-    #     self.lineMoveFinished()
-
-    def mouseDragEvent(self, ev):
-        """ Add new signal for when drag is finished.
-        """
-        if not self.movable or ev.button() != Qt.MouseButton.LeftButton:
-            return
-        ev.accept()
-        
-        if ev.isStart():
-            bdp = ev.buttonDownPos()
-            self.cursorOffsets = [l.pos() - bdp for l in self.lines]
-            self.startPositions = [l.pos() for l in self.lines]
-            self.moving = True
-            
-        if not self.moving:
-            return
-            
-        self.blockLineSignal = True  # only want to update once
-        for i, l in enumerate(self.lines):
-            l.setPos(self.cursorOffsets[i] + ev.pos())
-        self.prepareGeometryChange()
-        self.blockLineSignal = False
-        
-        if ev.isFinish():
-            self.moving = False
-            self.sigRegionChangeFinished.emit(self)
-            self.sigRegionDragFinished.emit(self)
-        else:
-            self.sigRegionChanged.emit(self)
+    def setMovable(self, movable: bool):
+        super().setMovable(movable)
+        if hasattr(self, '_movableAction'):
+            self._movableAction.setChecked(self.movable)
     
-    def group(self):
-        return self._group
-    
-    def setGroup(self, group):
-        self._group = group
+    def toggleMovable(self) -> None:
+        self.setMovable(not self.movable)
+        self.sigEditingFinished.emit(self)  # to update any data references
     
     def faceColor(self) -> QColor:
         return self.brush.color()
@@ -287,13 +247,50 @@ class AxisRegion(pg.LinearRegionItem):
                 event.accept()
     
     def mouseClickEvent(self, event):
-        if event.button() == Qt.RightButton:
+        if event.button() == Qt.MouseButton.RightButton:
             if self.boundingRect().contains(event.pos()):
                 if self.raiseContextMenu(event):
                     event.accept()
+                    return
+        super().mouseClickEvent(event)
     
-    # def mouseReleaseEvent(self, event):
-    #     print('mouseReleaseEvent')
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.editDialog(self.getViewWidget())
+            event.accept()
+            return
+        super().mouseDoubleClickEvent(event)
+    
+    def mouseDragEvent(self, event):
+        """ Add new signal for when drag is finished.
+        """
+        if not self.movable or event.button() != Qt.MouseButton.LeftButton:
+            super().mouseDragEvent(event)
+            return
+        
+        event.accept()
+        
+        if event.isStart():
+            bdp = event.buttonDownPos()
+            self.cursorOffsets = [l.pos() - bdp for l in self.lines]
+            self.startPositions = [l.pos() for l in self.lines]
+            self.moving = True
+            
+        if not self.moving:
+            return
+            
+        self.blockLineSignal = True  # only want to update once
+        for i, l in enumerate(self.lines):
+            l.setPos(self.cursorOffsets[i] + event.pos())
+        self.prepareGeometryChange()
+        self.blockLineSignal = False
+        
+        if event.isFinish():
+            self.moving = False
+            self.sigRegionChangeFinished.emit(self)
+            self.sigRegionDragFinished.emit(self)
+        else:
+            self.sigRegionChanged.emit(self)
     
     def raiseContextMenu(self, event):
         menu = self.getContextMenus(event)
@@ -303,18 +300,15 @@ class AxisRegion(pg.LinearRegionItem):
     
     def getContextMenus(self, event=None):
         self.menu = QMenu()
+        # self.menu.addMenu(self.contextMenu)
+        for action in self.contextMenu.actions():
+            self.menu.addAction(action)
 
-        self._thisItemMenu = QMenu(self.__class__.__name__)
-        self._thisItemMenu.addAction('Edit', lambda: self.editDialog())
-        # self._thisItemMenu.addSeparator()
-        # self._thisItemMenu.addAction('Hide', lambda: self.setVisible(False))
-        self._thisItemMenu.addSeparator()
-        self._thisItemMenu.addAction('Delete', lambda: self.sigRequestDeletion.emit(self))
-        self.menu.addMenu(self._thisItemMenu)
-
+        if self.includeParentContextMenus:
         # Let the scene add on to the end of our context menu (this is optional)
-        self.menu.addSection('View')
-        self.menu = self.scene().addParentContextMenus(self, self.menu, event)
+            self.menu.addSection('View')
+            self.menu = self.scene().addParentContextMenus(self, self.menu, event)
+        
         return self.menu
     
     def editDialog(self, parent: QWidget = None):
@@ -346,6 +340,12 @@ class AxisRegionPanel(QWidget):
         form = QFormLayout(self)
         form.setContentsMargins(5, 5, 5, 5)
         form.setSpacing(5)
+        form.setFieldGrowthPolicy(QFormLayout.AllNonFixedFieldsGrow)
+
+        # self._regionEdit = QLineEdit()
+        # self._regionEdit.setToolTip('min [,max]')
+        # self._regionEdit.setPlaceholderText('min [,max]')
+        # form.addRow('Region', self._regionEdit)
 
         self._minEdit = QLineEdit()
         self._maxEdit = QLineEdit()
@@ -353,10 +353,8 @@ class AxisRegionPanel(QWidget):
         form.addRow('Max', self._maxEdit)
 
         self._movableCheckBox = QCheckBox()
+        self._movableCheckBox.setChecked(True)
         form.addRow('Movable', self._movableCheckBox)
-
-        self._groupEdit = QLineEdit()
-        form.addRow('Group', self._groupEdit)
 
         self._textEdit = QTextEdit()
         form.addRow('Text', self._textEdit)
@@ -371,18 +369,16 @@ class AxisRegionPanel(QWidget):
         form.addRow(self._formatSection)
 
         # default settings
-        self.setState(AxisRegion().getState())
+        # self.setState(AxisRegion().getState())
     
     def getState(self):
         state = {}
 
         if self._minEdit.text() != '' and self._maxEdit.text() != '':
-            state['region'] = tuple(sorted([float(self._minEdit.text()), float(self._maxEdit.text())]))
+            state['position'] = tuple(sorted([float(self._minEdit.text()), float(self._maxEdit.text())]))
 
         if self._movableCheckBox.checkState() != Qt.CheckState.PartiallyChecked:
             state['movable'] = self._movableCheckBox.isChecked()
-        
-        state['group'] = self._groupEdit.text()
         
         state['text'] = self._textEdit.toPlainText()
 
@@ -393,13 +389,11 @@ class AxisRegionPanel(QWidget):
     def setState(self, state):
         for key, value in state.items():
             key = key.lower()
-            if key == 'region':
+            if key == 'position':
                 self._minEdit.setText(f'{value[0]:.6f}')
                 self._maxEdit.setText(f'{value[1]:.6f}')
             elif key == 'movable':
                 self._movableCheckBox.setChecked(value)
-            elif key == 'group':
-                self._groupEdit.setText(str(value))
             elif key == 'text':
                 self._textEdit.setPlainText(value)
             elif key == 'format':
