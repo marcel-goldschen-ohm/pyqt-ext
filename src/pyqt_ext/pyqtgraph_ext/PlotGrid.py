@@ -7,12 +7,8 @@ from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import numpy as np
 import platform
-import warnings
-try:
-    import pyqtgraph as pg
-    from pyqt_ext.pyqtgraph_ext import Plot
-except ImportError:
-    warnings.warn("Requires pyqtgraph")
+import pyqtgraph as pg
+from pyqt_ext.pyqtgraph_ext import Plot
 
 
 class PlotGrid(pg.GraphicsLayoutWidget):

@@ -7,11 +7,7 @@ from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from pyqt_ext.utils import toColorStr, toQColor
 from pyqt_ext.widgets import ColorButton, CollapsibleSection
-import warnings
-try:
-    import pyqtgraph as pg
-except ImportError:
-    warnings.warn("Requires pyqtgraph")
+import pyqtgraph as pg
 
 
 class AxisRegion(pg.LinearRegionItem):

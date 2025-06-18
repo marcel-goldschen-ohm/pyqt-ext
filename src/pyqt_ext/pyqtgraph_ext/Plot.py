@@ -3,12 +3,8 @@
 
 from __future__ import annotations
 from qtpy.QtGui import QColor
-import warnings
-try:
-    import pyqtgraph as pg
-    from pyqt_ext.pyqtgraph_ext import View
-except ImportError:
-    warnings.warn("Requires pyqtgraph")
+import pyqtgraph as pg
+from pyqt_ext.pyqtgraph_ext import View
 
 
 class Plot(pg.PlotItem):

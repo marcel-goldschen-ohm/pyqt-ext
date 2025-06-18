@@ -6,16 +6,13 @@ from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 import numpy as np
-import warnings
-try:
-    import pyqtgraph as pg
-    from pyqt_ext.pyqtgraph_ext import XAxisRegion, YAxisRegion, Graph
-except ImportError:
-    warnings.warn("Requires pyqtgraph")
+import pyqtgraph as pg
+from pyqt_ext.pyqtgraph_ext import XAxisRegion, YAxisRegion, Graph
 
 
 class View(pg.ViewBox):
-    """ ViewBox with context menu for drawing ROIs and events. """
+    """ ViewBox with functionality for drawing ROIs.
+    """
 
     sigStartedDrawingItems = Signal()
     sigItemAdded = Signal(QGraphicsObject)  # emits the newly added QGraphicsObject item
@@ -32,7 +29,7 @@ class View(pg.ViewBox):
         self.setBackgroundColor(QColor(255, 255, 255))
 
         # colormap (MATLAB lines)
-        self._colorIndex = 0
+        # rows are colors
         self._colormap = [
             (  0, 114, 189),
             (217,  83,  25),
@@ -43,58 +40,33 @@ class View(pg.ViewBox):
             (162,  20,  47),
         ]
 
-        # ROI styles
-        self._ROI_pen = pg.mkPen(QColor(237, 135, 131), width=1)
-        self._ROI_hoverPen = pg.mkPen(QColor(255, 0, 0), width=2)
-        self._ROI_handlePen = self._ROI_pen
-        self._ROI_handleHoverPen = self._ROI_hoverPen
-        self._ROI_brush = pg.mkBrush(QColor(237, 135, 131, 51))
-        self._ROI_hoverBrush = pg.mkBrush(QColor(237, 135, 131, 128))
+        # selected color (row) in colormap
+        self._colorIndex = 0
     
     def colormap(self):
         return self._colormap
     
-    def setColormap(self, colormap):
+    def setColormap(self, colormap) -> None:
         self._colormap = colormap
         self._colorIndex = self._colorIndex % len(self._colormap)
     
-    def nextColor(self):
+    def colorAtIndex(self, colorIndex) -> QColor:
+        ncolors = len(self._colormap)
+        color = self._colormap[colorIndex % ncolors]
+        return QColor(*color)
+    
+    def nextColor(self) -> QColor:
         ncolors = len(self._colormap)
         color = self._colormap[self._colorIndex % ncolors]
         self._colorIndex = (self._colorIndex + 1) % ncolors
         return QColor(*color)
     
-    def colorIndex(self):
+    def colorIndex(self) -> int:
         return self._colorIndex
     
-    def setColorIndex(self, colorIndex):
+    def setColorIndex(self, colorIndex: int) -> None:
         ncolors = len(self._colormap)
         self._colorIndex = colorIndex % ncolors
-    
-    # def addItem(self, item):
-    #     if isinstance(item, Graph):
-    #         item.setColor(self.nextColor())
-    #     pg.ViewBox.addItem(self, item)
-    
-    # def initContextMenu(self):
-    #     self._ROIsMenu = QMenu("ROIs")
-    #     self._ROIsMenu.addAction('Draw X-Axis ROIs (right-click to stop)', lambda: self.startDrawingItemsOfType(XAxisRegion))
-    #     # self._ROIsMenu.addAction('Draw Y-Axis ROIs (right-click to stop)', lambda: self.startDrawingItemsOfType(YAxisRegionItem))
-    #     self._ROIsMenu.addSeparator()
-    #     self._ROIsMenu.addAction("Show All", lambda: self.setVisibilityForItemsOfType(AxisRegion, True))
-    #     self._ROIsMenu.addAction("Hide All", lambda: self.setVisibilityForItemsOfType(AxisRegion, False))
-    #     self._ROIsMenu.addSeparator()
-    #     self._ROIsMenu.addAction("Delete All", lambda: self.deleteItemsOfType(AxisRegion))
-
-    #     # append to default context menu
-    #     self.menu.addSection('ROIs')
-    #     self.menu.addMenu(self._ROIsMenu)
-        
-    #     self.menu.addSection('Events')
-    #     self.menu.addMenu(self._eventsMenu)
-
-    #     # for appended menus from other objects
-    #     self.menu.addSeparator()
     
     def mousePressEvent(self, event):
         # store mouse press position in axes coords
@@ -114,7 +86,6 @@ class View(pg.ViewBox):
                 elif self._drawingItemsOfType in [pg.RectROI, pg.EllipseROI, pg.CircleROI, pg.LineSegmentROI]:
                     newItem = self._drawingItemsOfType(pos=posInAxesCoords, size=[0, 0], invertible=True, pen=self._ROI_pen, hoverPen=self._ROI_hoverPen, handlePen=self._ROI_handlePen, handleHoverPen=self._ROI_handleHoverPen)
                 elif issubclass(self._drawingItemsOfType, pg.PlotDataItem):
-                    print(self._itemBeingDrawn)
                     if isinstance(self._itemBeingDrawn, pg.PlotDataItem):
                         # add point to existing Graph
                         x, y = self._itemBeingDrawn.getOriginalDataset()
@@ -172,21 +143,6 @@ class View(pg.ViewBox):
         # default if event was not handled above
         pg.ViewBox.mouseMoveEvent(self, event)
     
-    def listItemsOfType(self, itemType):
-        return [item for item in self.allChildren() if isinstance(item, itemType)]
-    
-    def setVisibilityForItemsOfType(self, itemType, isVisible: bool):
-        for item in self.listItemsOfType(itemType):
-            item.setVisible(isVisible)
-    
-    def deleteItemsOfType(self, itemType):
-        for item in self.listItemsOfType(itemType):
-            self.deleteItem(item)
-    
-    def deleteItem(self, item):
-        self.removeItem(item)
-        item.deleteLater()
-    
     def startDrawingItemsOfType(self, itemType):
         self._itemBeingDrawn = None
         self._drawingItemsOfType = itemType
@@ -196,6 +152,9 @@ class View(pg.ViewBox):
         self._drawingItemsOfType = None
         self._itemBeingDrawn = None
         self.sigFinishedDrawingItems.emit()
+    
+    def listItemsOfType(self, itemType):
+        return [item for item in self.allChildren() if isinstance(item, itemType)]
 
 
 def test_live():

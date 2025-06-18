@@ -7,12 +7,8 @@ from qtpy.QtGui import *
 from qtpy.QtWidgets import *
 from pyqt_ext.utils import toQColor
 from pyqt_ext.widgets import TableWidgetWithCopyPaste
-import warnings
-try:
-    import pyqtgraph as pg
-    from pyqt_ext.pyqtgraph_ext import GraphStyle, editGraphStyle
-except ImportError:
-    warnings.warn("Requires pyqtgraph")
+import pyqtgraph as pg
+from pyqt_ext.pyqtgraph_ext import GraphStyle, editGraphStyle
 
 
 class Graph(pg.PlotDataItem):
@@ -201,6 +197,7 @@ class Graph(pg.PlotDataItem):
         vbox = QVBoxLayout(dlg)
         vbox.setContentsMargins(0, 0, 0, 0)
         vbox.setSpacing(0)
+        
         xdata, ydata = self.getOriginalDataset()
         n_rows = len(ydata)
         n_cols = 2
@@ -209,14 +206,57 @@ class Graph(pg.PlotDataItem):
             table.setItem(row, 0, QTableWidgetItem(str(xdata[row])))
             table.setItem(row, 1, QTableWidgetItem(str(ydata[row])))
         table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        xaxis = self.getViewBox().parentWidget().getAxis('bottom')
-        yaxis = self.getViewBox().parentWidget().getAxis('left')
-        xlabel = xaxis.labelText
-        if xaxis.labelUnits:
-            xlabel += f' ({xaxis.labelUnits})'
-        ylabel = yaxis.labelText
-        if yaxis.labelUnits:
-            ylabel += f' ({yaxis.labelUnits})'
+
+        xlabel = getattr(self, '_xlabel', None)
+        xunits = getattr(self, '_xunits', None)
+        ylabel = getattr(self, '_ylabel', None)
+        yunits = getattr(self, '_yunits', None)
+        
+        view: pg.ViewBox = self.getViewBox()
+        plot: pg.PlotItem = view.parentWidget()
+
+        if (xlabel is None) or (xunits is None):
+            # try and get label and units from plot axis
+            xaxis = plot.getAxis('bottom')
+            if xlabel is None:
+                xlabel = xaxis.labelText
+            if not xlabel:
+                # check linked views for valid axis label
+                linked_views = view.getState()['linkedViews'][0]
+                if linked_views is not None:
+                    for linked_view in linked_views:
+                        linked_plot: pg.PlotItem = linked_view.parentWidget()
+                        linked_xaxis = linked_plot.getAxis('bottom')
+                        if linked_xaxis.labelText:
+                            xaxis = linked_xaxis
+                            xlabel = xaxis.labelText
+                            break
+            if xunits is None:
+                xunits = xaxis.labelUnits
+        if xunits:
+            xlabel += f' ({xunits})'
+        
+        if (ylabel is None) or (yunits is None):
+            # try and get label and units from plot axis
+            yaxis = plot.getAxis('left')
+            if ylabel is None:
+                ylabel = yaxis.labelText
+            if not ylabel:
+                # check linked views for valid axis label
+                linked_views = view.getState()['linkedViews'][1]
+                if linked_views is not None:
+                    for linked_view in linked_views:
+                        linked_plot: pg.PlotItem = linked_view.parentWidget()
+                        linked_yaxis = linked_plot.getAxis('left')
+                        if linked_yaxis.labelText:
+                            yaxis = linked_yaxis
+                            ylabel = yaxis.labelText
+                            break
+            if yunits is None:
+                yunits = yaxis.labelUnits
+        if yunits:
+            ylabel += f' ({yunits})'
+        
         table.setHorizontalHeaderLabels([xlabel, ylabel])
         for col in range(n_cols):
             table.resizeColumnToContents(col)
