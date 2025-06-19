@@ -40,3 +40,9 @@ pip install pyqt-ext@git+https://github.com/marcel-goldschen-ohm/pyqt-ext
     - **Color selection button** [[code](src/pyqt_ext/widgets/ColorButton.py)] [[example](examples/ColorButtonExample.py)]: Tool button that displays selected color and opens color selection dialog on click.
     - **Multi-value spinbox** [[code](src/pyqt_ext/widgets/MultiValueSpinBox.py)] [[example](examples/MultiValueSpinBoxExample.py)]: Spin box allowing multiple selected values and value ranges. Works with string values too.
     - **Table widget with copy/paste** [[code](src/pyqt_ext/widgets/TableWidgetWithCopyPaste.py)]: QTableWidget with copy/paste to/from clipboard.
+
+## Dev notes
+For PDM lockfile:
+```
+pdm lock --strategy cross_platform
+```
