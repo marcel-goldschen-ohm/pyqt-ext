@@ -43,7 +43,10 @@ class AbstractTreeItem():
         
         See __str__ for a multi-line representation of the tree.
         """
-        return f'name={self.name()}, parent={self.parent().name() if self.parent() else '/'}, children={[child.name() for child in self.children]}'
+        name: str = self.name()
+        parent_name: str = self.parent().name() if self.parent() else '/'
+        child_names: str = ','.join([child.name() for child in self.children])
+        return f'name: {name}; parent: {parent_name}; children: {child_names}'
     
     def __str__(self) -> str:
         """ Returns a multi-line string representation of this item's tree branch.
