@@ -11,6 +11,7 @@ dependencies = [
     "numpy>=1.26.2",
     "QtPy>=2.4.1",
     "QtAwesome>=1.4.0",
+    "pyqtgraph>=0.13.3",
 ]
 authors = [
     {name = "Marcel Goldschen-Ohm", email = "goldschen-ohm@utexas.edu"},
@@ -22,17 +23,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3 :: Only",
-]
-
-[project.optional-dependencies]
-PySide6 = [
-    "PySide6<6.9.1",
-]
-pyqtgraph = [
-    "pyqtgraph>=0.13.3",
-]
-all = [
-    "pyqtgraph>=0.13.3",
 ]
 
 [project.urls]

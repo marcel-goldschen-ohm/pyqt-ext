@@ -14,9 +14,9 @@ In addition to being useful out-of-the-box, you may find these tools to be helpf
 - [Documentation](#documentation)
 
 ## Install
-Requires a PyQt package. Should work with PySide6, PyQt6, or PyQt5.
+Requires a PyQt package. Should work with PySide6, PyQt6, or PyQt5. *Note: pyqtgraph is incompatible with PySide6=6.9.1, not sure why?*
 ```shell
-pip install PySide6
+pip install "PySide6<6.9.1"
 ```
 Install latest release version:
 ```shell
