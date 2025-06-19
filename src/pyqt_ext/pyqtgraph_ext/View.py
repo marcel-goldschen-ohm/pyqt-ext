@@ -42,6 +42,14 @@ class View(pg.ViewBox):
 
         # selected color (row) in colormap
         self._colorIndex = 0
+
+        # ROI styles
+        self._ROI_pen = pg.mkPen(QColor(237, 135, 131), width=1)
+        self._ROI_hoverPen = pg.mkPen(QColor(255, 0, 0), width=2)
+        self._ROI_handlePen = self._ROI_pen
+        self._ROI_handleHoverPen = self._ROI_hoverPen
+        self._ROI_brush = pg.mkBrush(QColor(237, 135, 131, 51))
+        self._ROI_hoverBrush = pg.mkBrush(QColor(237, 135, 131, 128))
     
     def colormap(self):
         return self._colormap
@@ -171,7 +179,9 @@ def test_live():
     plot.show()
 
     view.startDrawingItemsOfType(Graph)
-    QTimer.singleShot(3000, lambda: view.stopDrawingItems())
+    QTimer.singleShot(2500, lambda: view.stopDrawingItems())
+    QTimer.singleShot(2600, lambda: view.startDrawingItemsOfType(XAxisRegion))
+    QTimer.singleShot(5000, lambda: view.stopDrawingItems())
 
     app.exec()
 
