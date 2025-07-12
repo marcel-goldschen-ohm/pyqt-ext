@@ -65,7 +65,7 @@ class TreeView(QTreeView):
         if items is None:
             items = list(root.depthFirst())
         
-        selected: list[QModelIndex] = self.selectionModel().selectedIndexes()
+        selected_indexes: list[QModelIndex] = self.selectionModel().selectedIndexes()
         for item in items:
             if item is root:
                 continue
@@ -73,7 +73,7 @@ class TreeView(QTreeView):
             if not index.isValid():
                 continue
             item._expanded_ = self.isExpanded(index)
-            item._selected_ = index in selected
+            item._selected_ = index in selected_indexes
 
     def restoreState(self, items: list[AbstractTreeItem] = None) -> None:
         model: AbstractTreeModel = self.model()
@@ -297,15 +297,25 @@ class TreeView(QTreeView):
             # Store the current state of the dragged paths and all their descendent paths in the MIME data.
             # We only want to do this for the model where the drag was initiated (i.e., mime_data.model).
             # We'll use this stored state in the dropEvent to restore the view of the dropped items.
-            self.storeState(mime_data.items)
+            items: list[AbstractTreeItem] = mime_data.items.copy()
+            for root_item in mime_data.items:
+                for item in root_item.depthFirst():
+                    if item not in items:
+                        items.append(item)
+            self.storeState(items)
         QTreeView.dragEnterEvent(self, event)
     
     def dropEvent(self, event: QDropEvent) -> None:
         mime_data = event.mimeData()
         QTreeView.dropEvent(self, event)
         if isinstance(mime_data, AbstractTreeMimeData):
-            # update state of dragged items as specified in the MIME data
-            self.restoreState(mime_data.items)
+            # update state of dragged items and all their descendents as specified in the MIME data
+            items: list[AbstractTreeItem] = mime_data.items.copy()
+            for root_item in mime_data.items:
+                for item in root_item.depthFirst():
+                    if item not in items:
+                        items.append(item)
+            self.restoreState(items)
     
     """
     Everything below here is for path-based manipulation of the tree.
