@@ -25,17 +25,19 @@ class KeyValueTreeModel(AbstractTreeModel):
         """
         if data is None:
             return
-        elif isinstance(data, KeyValueTreeItem):
+        if isinstance(data, KeyValueTreeItem):
             return data
+        # setup key:value item tree
         if not isinstance(data, dict) and not isinstance(data, list):
             raise ValueError('Root must be a dict or list.')
-        return KeyValueTreeItem(data)
+        return KeyValueTreeItem(None, data)
     
     def treeData(self) -> dict | list:
         """ The tree data.
         """
-        root: KeyValueTreeItem = self.root()
-        return root.value()
+        root: KeyValueTreeItem = self.rootItem()
+        root_map: dict | list =  root.value()
+        return root_map
     
     def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return 2
@@ -72,6 +74,8 @@ class KeyValueTreeModel(AbstractTreeModel):
                     return item.value()
         elif role == Qt.ItemDataRole.DecorationRole:
             if index.column() == 0:
+                if item.isLeaf():
+                    return
                 value = item.value()
                 if isinstance(value, dict):
                     return qta.icon('ph.folder-thin')

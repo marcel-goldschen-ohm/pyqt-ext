@@ -14,8 +14,6 @@ class TreeView(QTreeView):
 
     selectionWasChanged = Signal()
 
-    VIEW_STATE_ATTR = 'view_state'
-
     def __init__(self, *args, **kwargs) -> None:
         QTreeView.__init__(self, *args, **kwargs)
 
@@ -61,7 +59,7 @@ class TreeView(QTreeView):
         model: AbstractTreeModel = self.model()
         if model is None:
             return
-        root: AbstractTreeItem = model.root()
+        root: AbstractTreeItem = model.rootItem()
         if root is None:
             return
         if items is None:
@@ -74,16 +72,14 @@ class TreeView(QTreeView):
             index: QModelIndex = model.indexFromItem(item)
             if not index.isValid():
                 continue
-            setattr(item, self.VIEW_STATE_ATTR, {
-                'expanded': self.isExpanded(index),
-                'selected': index in selected
-            })
+            item._expanded_ = self.isExpanded(index)
+            item._selected_ = index in selected
 
     def restoreState(self, items: list[AbstractTreeItem] = None) -> None:
         model: AbstractTreeModel = self.model()
         if model is None:
             return
-        root: AbstractTreeItem = model.root()
+        root: AbstractTreeItem = model.rootItem()
         if root is None:
             return
         if items is None:
@@ -97,13 +93,10 @@ class TreeView(QTreeView):
             index: QModelIndex = model.indexFromItem(item)
             if not index.isValid():
                 continue
-            item_view_state = getattr(item, self.VIEW_STATE_ATTR, None)
-            if item_view_state is None:
-                continue
-            isExpanded = item_view_state.get('expanded', None)
+            isExpanded = getattr(item, '_expanded_', None)
             if isExpanded is not None:
                 self.setExpanded(index, isExpanded)
-            isSelected = item_view_state.get('selected', None)
+            isSelected = getattr(item, '_selected_', None)
             if isSelected is not None:
                 # flags = QItemSelectionModel.SelectionFlag.Rows
                 # if isSelected:
@@ -149,9 +142,6 @@ class TreeView(QTreeView):
             self.selectionModel().select(selection, flags)
     
     def removeItems(self, items: list[AbstractTreeItem]) -> None:
-        model: AbstractTreeModel = self.model()
-        if model is None:
-            return
         if not items:
             return
         self.model().removeItems(items)
@@ -168,9 +158,10 @@ class TreeView(QTreeView):
             return
         if text is None:
             if len(items) == 1:
-                text = f'Remove {items[0].path}?'
+                text = f'Remove {items[0].path()}?'
             else:
-                text = f'Remove items including {items[0].path}?'
+                count: int = len(items)
+                text = f'Remove {count} items including {items[0].path()}?'
         answer = QMessageBox.question(self, title, text, 
             buttons=QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, 
             defaultButton=QMessageBox.StandardButton.No
@@ -354,27 +345,46 @@ class TreeView(QTreeView):
 
 
 def test_live():
-    root = AbstractTreeItem()
-    AbstractTreeItem(parent=root)
-    root.appendChild(AbstractTreeItem(name='child2'))
-    root.insertChild(1, AbstractTreeItem(name='child3'))
-    root.children[1].appendChild(AbstractTreeItem())
-    root.children[1].appendChild(AbstractTreeItem())
-    root.children[1].appendChild(AbstractTreeItem())
+    root1 = AbstractTreeItem()
+    AbstractTreeItem(parent=root1)
+    root1.appendChild(AbstractTreeItem(name='child2'))
+    root1.insertChild(1, AbstractTreeItem(name='child3'))
+    root1.children[1].appendChild(AbstractTreeItem())
+    root1.children[1].appendChild(AbstractTreeItem())
+    root1.children[1].appendChild(AbstractTreeItem())
     grandchild2 = AbstractTreeItem(name='grandchild2')
-    grandchild2.setParent(root['child2'])
-    AbstractTreeItem(name='greatgrandchild', parent=root['/child2/grandchild2'])
-    print(root)
+    grandchild2.setParent(root1['child2'])
+    AbstractTreeItem(name='greatgrandchild', parent=root1['/child2/grandchild2'])
+
+    root2 = AbstractTreeItem()
+    AbstractTreeItem(parent=root2)
+    root2.appendChild(AbstractTreeItem(name='child22'))
+    root2.insertChild(1, AbstractTreeItem(name='child23'))
+    root2.children[1].appendChild(AbstractTreeItem())
+    root2.children[1].appendChild(AbstractTreeItem())
+    root2.children[1].appendChild(AbstractTreeItem())
+    grandchild2 = AbstractTreeItem(name='grandchild22')
+    grandchild2.setParent(root2['child22'])
+    AbstractTreeItem(name='greatgrandchild2', parent=root2['/child22/grandchild22'])
 
     app = QApplication()
-    model = AbstractTreeModel(root)
-    view = TreeView()
-    view.setModel(model)
-    view.show()
-    view.resize(QSize(800, 600))
-    view.showAll()
+    model1 = AbstractTreeModel(root1)
+    view1 = TreeView()
+    view1.setModel(model1)
+    view1.show()
+    view1.resize(QSize(800, 600))
+    view1.showAll()
+    view1.setWindowTitle('TreeView 1')
+    model2 = AbstractTreeModel(root2)
+    view2 = TreeView()
+    view2.setModel(model2)
+    view2.show()
+    view2.resize(QSize(800, 600))
+    view2.showAll()
+    view2.setWindowTitle('TreeView 2')
     app.exec()
-    print(root)
+    print(root1)
+    print(root2)
 
 
 if __name__ == '__main__':

@@ -11,7 +11,7 @@ class AbstractTreeItem():
     """ Base class for a tree of items to be used as a data interface with AbstractTreeModel(QAbstractItemModel).
     
     !!! This only implements the tree structure.
-        You must define any data variables in a derived class.
+        You must define any attributes to interface with the actual tree data in a derived class.
     
     What you get out-of-the-box:
         - A host of methods for navigating and manipulating the tree structure:
@@ -24,10 +24,11 @@ class AbstractTreeItem():
         - An interface that is designed to work with AbstractTreeModel (i.e., QAbstractItemModel).
 
     In a derived class:
-        1. Add attributes to store/interface with your data.
-        2. Minimally reimplement `data` and `setData` methods (used by AbstractTreeModel).
+        1. Add attributes to store/interface with your tree data.
+        2. Reimplement methods `setParent` and `insertChild` if you need to edit the structure of the underlying tree data (all other tree manipulation methods are based on these two methods). Out-of-the-box these methods only alter the structure of the tree item wrappers, not the underlying data which this abstract class knows nothing about. Note: If each tree item owns its own data, then you probably don't need to touch these.
         3. For nice printout, you may want to reimplement `__repr__`.
-        4. For special linkage rules you may need to reimplement `setParent` and `insertChild`.
+    
+    For an example, see `KeyValueTreeItem`.
     """
     
     def __init__(self, name: str | None = None, parent: AbstractTreeItem | None = None) -> None:
@@ -38,6 +39,8 @@ class AbstractTreeItem():
             # properly handle parent linkage
             self.setParent(parent)
     
+    # pretty print tree --------------------------------------------------
+
     def __repr__(self) -> str:
         """ Return a single line string representation of this item.
         
@@ -55,6 +58,39 @@ class AbstractTreeItem():
         """
         return self._tree_repr(lambda item: item.name())
     
+    def dumps(self) -> str:
+        """ Returns a multi-line string representation of this item's tree branch.
+
+        Each item is described by its repr.
+        """
+        return self._tree_repr(lambda item: repr(item))
+    
+    def _tree_repr(self, func: Callable[[AbstractTreeItem], str]) -> str:
+        """ Returns a multi-line string representation of this item's tree branch.
+
+        Each item is described by the single line str returned by func(item).
+        See __str__ and dumps for examples.
+        """
+        items: list[AbstractTreeItem] = list(self.depthFirst())
+        lines: list[str] = [func(item) for item in items]
+        for i, item in enumerate(items):
+            if item is self:
+                continue
+            if item is item.parent().lastChild():
+                lines[i] = '\u2514' + '\u2500'*2 + ' ' + lines[i]
+            else:
+                lines[i] = '\u251C' + '\u2500'*2 + ' ' + lines[i]
+            parent = item.parent()
+            while parent is not self:
+                if i < items.index(parent.parent().lastChild()):
+                    lines[i] = '\u2502' + ' '*3 + lines[i]
+                else:
+                    lines[i] = ' '*4 + lines[i]
+                parent = parent.parent()
+        return '\n'.join(lines)
+    
+    # path-based item access based on item name --------------------------------------------------
+
     def __getitem__(self, path: str) -> AbstractTreeItem:
         """ Return subtree item at path starting from this item.
 
@@ -111,45 +147,14 @@ class AbstractTreeItem():
         # name new_item according to path (ignore's new_item's current name)
         new_item.setName(new_item_name)
     
-    def dumps(self) -> str:
-        """ Returns a multi-line string representation of this item's tree branch.
-
-        Each item is described by its repr.
-        """
-        return self._tree_repr(lambda item: repr(item))
-    
-    def _tree_repr(self, func: Callable[[AbstractTreeItem], str]) -> str:
-        """ Returns a multi-line string representation of this item's tree branch.
-
-        Each item is described by the single line str returned by func(item).
-        See __str__ and dumps for examples.
-        """
-        items: list[AbstractTreeItem] = list(self.depthFirst())
-        lines: list[str] = [func(item) for item in items]
-        for i, item in enumerate(items):
-            if item is self:
-                continue
-            if item is item.parent().lastChild():
-                lines[i] = '\u2514' + '\u2500'*2 + ' ' + lines[i]
-            else:
-                lines[i] = '\u251C' + '\u2500'*2 + ' ' + lines[i]
-            parent = item.parent()
-            while parent is not self:
-                if i < items.index(parent.parent().lastChild()):
-                    lines[i] = '\u2502' + ' '*3 + lines[i]
-                else:
-                    lines[i] = ' '*4 + lines[i]
-                parent = parent.parent()
-        return '\n'.join(lines)
-    
     def name(self) -> str:
         """ Retun this item's name, or the item's sibling index (or '' if root) if name is not defined.
         """
         if (self._name is None) or (self._name == ''):
             # return f'{self.__class__.__name__}@{id(self)}'
-            row = self.siblingIndex()
-            if row is None:
+            if self.parent() is None:
                 return ''
+            row = self.siblingIndex()
             return f'{row}'
         return self._name
     
@@ -168,26 +173,28 @@ class AbstractTreeItem():
         not any data associated with the AbstractTreeItems.
 
         Derived classes that need to mirror changes in the tree structure to their data 
-        should reimplement parent.setter.
+        should reimplement this method.
         
         Note: Together, setParent and insertChild cover all needed tree restructuring.
         See appendChild, insertChild, and removeChild.
         """
-        if self.parent() is parent:
+        oldParent: AbstractTreeItem | None = self.parent()
+        newParent: AbstractTreeItem | None = parent
+        if oldParent is newParent:
             # nothing to do
             return
-        if (parent is not None) and parent.hasAncestor(self):
+        if (newParent is not None) and newParent.hasAncestor(self):
             raise ValueError('Cannot set parent to a descendant.')
         
-        if self.parent() is not None:
+        if oldParent is not None:
             # detach from old parent
-            if self in self.parent().children:
-                self.parent().children.remove(self)
-        if parent is not None:
+            if self in oldParent.children:
+                oldParent.children.remove(self)
+        if newParent is not None:
             # attach to new parent (appends as last child)
-            if self not in parent.children:
-                parent.children.append(self)
-        self._parent = parent
+            if self not in newParent.children:
+                newParent.children.append(self)
+        self._parent = newParent
     
     def path(self) -> str:
         """ Return the /path/to/this/item from the root item.
@@ -218,6 +225,8 @@ class AbstractTreeItem():
 
     def siblings(self) -> list[AbstractTreeItem]:
         """ Return a list of this item's siblings (inclusive of this item).
+
+        Return a copy so that manipulating the returned list does not affect the tree structure.
         """
         if self.parent() is not None:
             return self.parent().children.copy()
@@ -271,26 +280,34 @@ class AbstractTreeItem():
     
     # tree mutation --------------------------------------------------
 
-    def appendChild(self, child: AbstractTreeItem) -> None:
-        child.setParent(self)
+    def appendChild(self, item: AbstractTreeItem) -> None:
+        """ Reparent item as this item's last child.
+        """
+        item.setParent(self)
     
-    def insertChild(self, index: int, child: AbstractTreeItem) -> None:
+    def insertChild(self, index: int, item: AbstractTreeItem) -> None:
+        """ Reparent item as this item's index-th child.
+
+        If you need to update the underlying data structure, you must reimplement both setParent() and this method in a derived class.
+        """
         if not (0 <= index <= len(self.children)):
             raise IndexError('Index out of range.')
         # append as last child
-        child.setParent(self)
+        item.setParent(self)
         # move item to index
-        pos = self.children.index(child)
+        pos = self.children.index(item)
         if pos != index:
             if pos < index:
                 index -= 1
             if pos != index:
                 self.children.insert(index, self.children.pop(pos))
     
-    def removeChild(self, child: AbstractTreeItem) -> None:
-        if child.parent() is not self:
+    def removeChild(self, item: AbstractTreeItem) -> None:
+        """ Remove child from this item's children list and orphan it.
+        """
+        if item.parent() is not self:
             raise ValueError('Item is not a child of this item.')
-        child.setParent(None)
+        item.setParent(None)
     
     # ancestors iteration --------------------------------------------------
 
@@ -388,7 +405,8 @@ class AbstractTreeItem():
     # misc --------------------------------------------------
 
     def depth(self, root: AbstractTreeItem = None) -> int:
-        # Return depth of this item in the branch starting at root (or entire tree if root is None).
+        """ Return depth of this item in the branch starting at root (or entire tree if root is None).
+        """
         depth: int = 0
         item: AbstractTreeItem = self
         while (item.parent() is not None) and (item is not root):
@@ -408,6 +426,8 @@ class AbstractTreeItem():
     @staticmethod
     def uniqueName(name: str, names: list[str], unique_counter_start: int = 2) -> str:
         """ May be useful for trees that require unique paths (i.e., sibling names).
+
+        If name in names, return name_2, or name_3, etc. until a unique name is found.
         """
         if name not in names:
             return name

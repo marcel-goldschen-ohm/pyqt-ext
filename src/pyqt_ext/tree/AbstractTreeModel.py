@@ -1,9 +1,6 @@
 """ Base class for a tree model that uses AbstractTreeItem for its data interface.
 
 Supports drag-and-drop within and between models in the same program/process.
-
-TODO:
-- move/copy items between different models
 """
 
 from __future__ import annotations
@@ -21,6 +18,8 @@ class AbstractTreeModel(QAbstractItemModel):
     Constructor takes either the tree data itself or a root item wrapping the tree data.
 
     This class can work as is, but in general you will derive from it and reimplement `setupItemTree`, `treeData`, `data` and `setData`. Optionally also reimplement `columnCount`, `flags`, etc. to suit your data.
+
+    If needed, you can overwrite MIME_TYPE in a derived class to a custom MIME type for drag-and-drop operations.
     """
 
     MIME_TYPE = 'application/x-AbstractTreeModel'
@@ -29,19 +28,16 @@ class AbstractTreeModel(QAbstractItemModel):
         QAbstractItemModel.__init__(self, **kwargs)
 
         # tree data interface
-        if (data is None) or isinstance(data, AbstractTreeItem):
-            self._root: AbstractTreeItem = data
-        else:
-            # setup the item tree from the tree data
-            self._root: AbstractTreeItem = self.setupItemTree(data)
+        self._rootItem: AbstractTreeItem = None
+        self.setTreeData(data)
 
         # headers
-        self._row_labels: list = []
-        self._column_labels: list = []
+        self._rowLabels: list = []
+        self._columnLabels: list = []
 
         # drag-and-drop
         self._supportedDropActions: Qt.DropActions = Qt.DropAction.MoveAction | Qt.DropAction.CopyAction
-        self._mime_types: list[str] = [self.MIME_TYPE]
+        self._mimeTypes: list[str] = [self.MIME_TYPE]
     
     # !! Must reimpliment.
     def setupItemTree(self, data: Any) -> AbstractTreeItem:
@@ -49,13 +45,14 @@ class AbstractTreeModel(QAbstractItemModel):
         """
         if data is None:
             return
-        elif isinstance(data, AbstractTreeItem):
+        if isinstance(data, AbstractTreeItem):
             return data
+        # you must reimpliment this method to handle the input tree data...
         raise NotImplementedError
     
     # !! Must reimpliment.
     def treeData(self) -> Any:
-        """ The tree data.
+        """ Reimpliment in derived class to appropriately return the underlying tree data.
         """
         raise NotImplementedError
     
@@ -63,19 +60,19 @@ class AbstractTreeModel(QAbstractItemModel):
         """ Rebuild the item tree for the input tree data.
         """
         if (data is None) or isinstance(data, AbstractTreeItem):
-            self.setRoot(data)
+            self.setRootItem(data)
             return
         
         self.beginResetModel()
-        self._root = self.setupItemTree(data)
+        self._rootItem = self.setupItemTree(data)
         self.endResetModel()
     
-    def root(self) -> AbstractTreeItem:
-        return self._root
+    def rootItem(self) -> AbstractTreeItem:
+        return self._rootItem
     
-    def setRoot(self, root: AbstractTreeItem) -> None:
+    def setRootItem(self, root: AbstractTreeItem) -> None:
         self.beginResetModel()
-        self._root = root
+        self._rootItem = root
         self.endResetModel()
     
     def reset(self) -> None:
@@ -94,7 +91,7 @@ class AbstractTreeModel(QAbstractItemModel):
             # ?? Only first column index has children. Not sure this matters.
             return 0
         if not parent_index.isValid():
-            parent_item: AbstractTreeItem = self.root()
+            parent_item: AbstractTreeItem = self.rootItem()
         else:
             parent_item: AbstractTreeItem = self.itemFromIndex(parent_index)
         if parent_item is None:
@@ -104,7 +101,7 @@ class AbstractTreeModel(QAbstractItemModel):
     def columnCount(self, parent_index: QModelIndex = QModelIndex()) -> int:
         """ Defaults to a single column tree.
 
-        Reimplement if you need more than one column.
+        Reimplement in a derived class if you need more than one column.
         """
         return 1
 
@@ -112,7 +109,7 @@ class AbstractTreeModel(QAbstractItemModel):
         """ Get the item associated with index.
         """
         if not index.isValid():
-            return self.root()
+            return self.rootItem()
         item: AbstractTreeItem = index.internalPointer()
         return item
     
@@ -121,20 +118,20 @@ class AbstractTreeModel(QAbstractItemModel):
 
         Each item is associated with a row, so the column is either assumed to be 0 or needs to be given.
         """
-        if (item is self.root()) or (item.parent() is None):
+        if (item is self.rootItem()) or (item.parent() is None):
             # item is the root item
             return QModelIndex()
         row: int = item.siblingIndex()
         return self.createIndex(row, column, item)
 
     def parent(self, index: QModelIndex = QModelIndex()) -> QModelIndex:
-        """ Uses `AbstractTreeItem.parent` to get the parent index.
+        """ Uses item tree to get the parent index.
         """
         if not index.isValid():
             return QModelIndex()
         item: AbstractTreeItem = self.itemFromIndex(index)
         parent_item: AbstractTreeItem = item.parent()
-        if parent_item is None or parent_item is self.root():
+        if parent_item is None or parent_item is self.rootItem():
             return QModelIndex()
         return self.indexFromItem(parent_item)
 
@@ -156,6 +153,7 @@ class AbstractTreeModel(QAbstractItemModel):
         """ Default item flags.
         
         Supports drag-and-drop if it is enabled in `supportedDropActions`.
+        Reimplement in a derived class if you need custom flags.
         """
         if not index.isValid():
             # root item
@@ -170,7 +168,9 @@ class AbstractTreeModel(QAbstractItemModel):
 
     # !! Probably need to reimpliment.
     def data(self, index: QModelIndex, role: int):
-        """ Reimpliment to get the data at index.
+        """ Reimpliment in a derived class to get the data at index.
+
+        Default implementation returns the item name for the first column.
         """
         if not index.isValid():
             return
@@ -181,7 +181,9 @@ class AbstractTreeModel(QAbstractItemModel):
 
     # !! Probably need to reimpliment.
     def setData(self, index: QModelIndex, value, role: int) -> bool:
-        """ Reimpliment to set the data at index.
+        """ Reimpliment in a derived class to set the data at index.
+
+        Default implementation sets the item name for the first column.
         """
         if not index.isValid():
             return False
@@ -228,10 +230,10 @@ class AbstractTreeModel(QAbstractItemModel):
         return False
     
     def rowLabels(self) -> list:
-        return self._row_labels
+        return self._rowLabels
     
     def setRowLabels(self, labels: list) -> None:
-        old_labels = self._row_labels
+        old_labels = self._rowLabels
         n_overlap = min(len(labels), len(old_labels))
         first_change = 0
         while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
@@ -239,15 +241,15 @@ class AbstractTreeModel(QAbstractItemModel):
         last_change = max(len(labels), len(old_labels)) - 1
         while (last_change < n_overlap) and (labels[last_change] == old_labels[last_change]):
             last_change -= 1
-        self._row_labels = labels
+        self._rowLabels = labels
         if first_change <= last_change: 
             self.headerDataChanged.emit(Qt.Orientation.Vertical, first_change, last_change)
     
     def columnLabels(self) -> list | None:
-        return self._column_labels
+        return self._columnLabels
     
     def setColumnLabels(self, labels: list | None) -> None:
-        old_labels = self._column_labels
+        old_labels = self._columnLabels
         n_overlap = min(len(labels), len(old_labels))
         first_change = 0
         while (first_change < n_overlap) and (labels[first_change] == old_labels[first_change]):
@@ -255,12 +257,12 @@ class AbstractTreeModel(QAbstractItemModel):
         last_change = max(len(labels), len(old_labels)) - 1
         while (last_change < n_overlap) and (labels[last_change] == old_labels[last_change]):
             last_change -= 1
-        self._column_labels = labels
+        self._columnLabels = labels
         if first_change <= last_change: 
             self.headerDataChanged.emit(Qt.Orientation.Horizontal, first_change, last_change)
     
     def maxDepth(self):
-        root: AbstractTreeItem = self.root()
+        root: AbstractTreeItem = self.rootItem()
         if root is None:
             return 0
         return root.maxDepthBelow()
@@ -308,7 +310,6 @@ class AbstractTreeModel(QAbstractItemModel):
         Reimpliment if you need custom logic to check the validity of the move.
         Otherwise you probably do not need to touch this if you have appropriately implemented `AbstractTreeItem.insertChild`.
         """
-        # print('moveRows(', self.itemFromIndex(src_parent_index).path, src_row, count, self.itemFromIndex(dst_parent_index).path, dst_row, ')')
         n_src_rows: int = self.rowCount(src_parent_index)
         n_dst_rows: int = self.rowCount(dst_parent_index)
         if (src_row < 0) or (src_row + count > n_src_rows):
@@ -326,7 +327,6 @@ class AbstractTreeModel(QAbstractItemModel):
         dst_parent_item: AbstractTreeItem = self.itemFromIndex(dst_parent_index)
 
         src_items: list[AbstractTreeItem] = src_parent_item.children[src_row: src_row + count]
-        # print('items to move:', [item.path for item in src_items])
 
         for src_item in src_items:
             if dst_parent_item.hasAncestor(src_item):
@@ -370,7 +370,9 @@ class AbstractTreeModel(QAbstractItemModel):
         if not items:
             return False
         n_rows: int = len(parent_item.children)
-        if (row < 0) or (row > n_rows):
+        if row == -1:
+            row = n_rows  # append
+        elif (row < 0) or (row > n_rows):
             return False
         parent_index: QModelIndex = self.indexFromItem(parent_item)
         count: int = len(items)
@@ -406,7 +408,7 @@ class AbstractTreeModel(QAbstractItemModel):
             src_row: int = item_group[0].siblingIndex()
             count: int = len(item_group)
             success = self.moveRows(src_parent_index, src_row, count, dst_parent_index, dst_row)
-        # !! return value only makes complete sense if removing a single contiguous block of items
+        # !! return value only makes complete sense if moving a single contiguous block of items
         return success
     
     def moveItem(self, item: AbstractTreeItem, dst_parent_item: AbstractTreeItem, dst_row: int = -1) -> bool:
@@ -419,9 +421,23 @@ class AbstractTreeModel(QAbstractItemModel):
         """
         if src_model is dst_model:
             return dst_model.moveItems(src_items, dst_parent_item, dst_row)
-        
-        # TODO...implement transfer between different tree models
-        raise NotImplementedError
+
+        success: bool = False
+        dst_parent_index: QModelIndex = dst_model.indexFromItem(dst_parent_item)
+        src_item_groups: list[list[AbstractTreeItem]] = src_model.groupItems(src_items)
+        for item_group in src_item_groups:
+            # remove items from src_model
+            src_parent_item: AbstractTreeItem = item_group[0].parent()
+            src_parent_index: QModelIndex = src_model.indexFromItem(src_parent_item)
+            src_row: int = item_group[0].siblingIndex()
+            count: int = len(item_group)
+            success = src_model.removeRows(src_row, count, src_parent_index)
+            if not success:
+                continue
+            # insert itmes in dst_model
+            success = dst_model.insertItems(dst_row, item_group, dst_parent_item)
+        # !! return value only makes complete sense if moving a single contiguous block of items
+        return success
     
     def transferItem(self, src_model: AbstractTreeModel, src_item: AbstractTreeItem, dst_model: AbstractTreeModel, dst_parent_item: AbstractTreeItem, dst_row: int = -1) -> bool:
         self.transferItems(src_model, [src_item], dst_model, dst_parent_item, dst_row)
@@ -432,7 +448,7 @@ class AbstractTreeModel(QAbstractItemModel):
         This is used to prepare for moving or copying items in the tree.
         Note: items should never contain the root item.
         """
-        root: AbstractTreeItem = self.root()
+        root: AbstractTreeItem = self.rootItem()
         if root in items:
             items.remove(root)
         group_parents: list[AbstractTreeItem] = []
@@ -464,15 +480,15 @@ class AbstractTreeModel(QAbstractItemModel):
     def mimeTypes(self) -> list[str]:
         """ Return the MIME types supported by this view for drag-and-drop operations.
         """
-        return self._mime_types
+        return self._mimeTypes
     
     def setMimeTypes(self, mime_types :list[str]) -> None:
-        self._mime_types = mime_types
+        self._mimeTypes = mime_types
 
     def mimeData(self, indexes: list[QModelIndex]) -> AbstractTreeMimeData | None:
         if not indexes:
             return None
-        if self.root() is None:
+        if self.rootItem() is None:
             return None
         items: list[AbstractTreeItem] = [self.itemFromIndex(index) for index in indexes if index.isValid()]
         if not items:
@@ -492,12 +508,10 @@ class AbstractTreeModel(QAbstractItemModel):
 
         # move src_items to the destination (row-th child of parent_index)
         dst_model: AbstractTreeModel = self
-        if dst_model.root() is None:
+        if dst_model.rootItem() is None:
             return False
         dst_parent_item: AbstractTreeItem = dst_model.itemFromIndex(parent_index)
         
-        # check for any move conflicts...
-
         self.transferItems(src_model, src_items, dst_model, dst_parent_item, row)
 
         # !? If we return True, the model will attempt to remove rows.
@@ -524,7 +538,7 @@ class AbstractTreeModel(QAbstractItemModel):
     def itemFromPath(self, path: str) -> AbstractTreeItem:
         """ Find the item associated with path starting from root.
         """
-        root: AbstractTreeItem = self.root()
+        root: AbstractTreeItem = self.rootItem()
         return root[path]
 
     def pathFromIndex(self, index: QModelIndex = QModelIndex()) -> str:
@@ -659,24 +673,26 @@ class AbstractTreeMimeData(QMimeData):
     If you really need to do this, you need to somehow serialize the dragged items (maybe with pickle), pass the serialized bytes in the drag MIME data, then deserialize back to the items on drop.
     """
 
-    def __init__(self, model: AbstractTreeModel, items: list[AbstractTreeItem], MIME_type: str):
+    def __init__(self, model: AbstractTreeModel, items: list[AbstractTreeItem], mimeType: str):
         QMimeData.__init__(self)
 
         # these define the tree items being dragged and their MIME type
         self.model: AbstractTreeModel = model
         self.items: list[AbstractTreeItem] = items
-        self.MIME_type = MIME_type
+        self.mimeType = mimeType
 
         # The actual value of the data here is not important, as we won't use it.
         # Instead, we will use the above attributes to handle drag-and-drop.
-        self.setData(self.MIME_type, self.MIME_type.encode('utf-8'))
+        # This is just to ensure that the MIME data has a valid format.
+        self.setData(self.mimeType, self.mimeType.encode('utf-8'))
     
-    def hasFormat(self, MIME_type: str) -> bool:
+    def hasFormat(self, mimeType: str) -> bool:
         """ Check if the MIME data has the specified format.
         
-        Overrides the default method to check for self.MIME_type.
+        Overrides the default method to check for self.mimeType.
+        ?? Not sure this is needed.
         """
-        return MIME_type == self.MIME_type or super().hasFormat(MIME_type)
+        return mimeType == self.mimeType or super().hasFormat(mimeType)
 
 
 def test_model():
@@ -693,15 +709,15 @@ def test_model():
 
     print('\nInitial model...')
     model = AbstractTreeModel(root)
-    print(model.root())
+    print(model.rootItem())
 
     print('\nRemove grandchild2...')
     model.removeItem(grandchild2)
-    print(model.root())
+    print(model.rootItem())
 
     print('\nInsert grandchild2...')
     model.insertItems(0, [grandchild2], root['child2'])
-    print(model.root())
+    print(model.rootItem())
 
 
 if __name__ == '__main__':

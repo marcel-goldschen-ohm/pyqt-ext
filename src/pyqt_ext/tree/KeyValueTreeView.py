@@ -36,7 +36,7 @@ class KeyValueTreeView(TreeView):
             menu.addAction(f'Remove {item_label}', lambda item=item: self.askToRemoveItems([item]))
             menu.addSeparator()
         else:
-            item: KeyValueTreeItem = model.root()
+            item: KeyValueTreeItem = model.rootItem()
             menu.addAction(f'Add New Item', lambda item=item: self.appendNewChild(item))
             menu.addSeparator()
         
@@ -75,8 +75,6 @@ class KeyValueTreeView(TreeView):
 
 class KeyValueTreeViewDelegate(QStyledItemDelegate):
     """ Delegate for editing values.
-
-    Provides checkbox for bool values.
     """
     def __init__(self, parent: QObject = None):
         QStyledItemDelegate.__init__(self, parent)
