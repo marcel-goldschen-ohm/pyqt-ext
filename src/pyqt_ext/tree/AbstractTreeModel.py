@@ -690,7 +690,6 @@ class AbstractTreeMimeData(QMimeData):
         """ Check if the MIME data has the specified format.
         
         Overrides the default method to check for self.mimeType.
-        ?? Not sure this is needed.
         """
         return mimeType == self.mimeType or super().hasFormat(mimeType)
 

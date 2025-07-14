@@ -135,7 +135,7 @@ class AbstractTreeItem():
                 item = AbstractTreeItem(name=name, parent=item)
         # set new_item at path
         new_item_name = path_parts[-1]
-        child_names = [child.name for child in item.children]
+        child_names = [child.name() for child in item.children]
         if new_item_name in child_names:
             # replace item at path with new_item
             child_index = child_names.index(new_item_name)
