@@ -65,6 +65,9 @@ class TreeView(QTreeView):
         if items is None:
             items = list(root.depthFirst())
         
+        if not hasattr(self, '_view_state_'):
+            self._view_state_ = {}
+        
         selected_indexes: list[QModelIndex] = self.selectionModel().selectedIndexes()
         for item in items:
             if item is root:
@@ -74,6 +77,10 @@ class TreeView(QTreeView):
                 continue
             item._expanded_ = self.isExpanded(index)
             item._selected_ = index in selected_indexes
+            self._view_state_[item.path()] = {
+                'expanded': item._expanded_,
+                'selected': item._selected_,
+            }
 
     def restoreState(self, items: list[AbstractTreeItem] = None) -> None:
         model: AbstractTreeModel = self.model()
@@ -84,6 +91,8 @@ class TreeView(QTreeView):
             return
         if items is None:
             items = list(root.depthFirst())
+        
+        state = getattr(self, '_view_state_', {})
 
         to_select: QItemSelection = QItemSelection()
         to_deselect: QItemSelection = QItemSelection()
@@ -94,9 +103,19 @@ class TreeView(QTreeView):
             if not index.isValid():
                 continue
             isExpanded = getattr(item, '_expanded_', None)
+            if isExpanded is None:
+                try:
+                    isExpanded = state[item.path()]['expanded']
+                except KeyError:
+                    pass
             if isExpanded is not None:
                 self.setExpanded(index, isExpanded)
             isSelected = getattr(item, '_selected_', None)
+            if isSelected is None:
+                try:
+                    isSelected = state[item.path()]['selected']
+                except KeyError:
+                    pass
             if isSelected is not None:
                 # flags = QItemSelectionModel.SelectionFlag.Rows
                 # if isSelected:
