@@ -1,11 +1,16 @@
 """ Data interface for a tree of key:value pairs.
 
 e.g., Any level of nesting of dict and list objects.
+
+TODO:
+- Numpy N-D arrays
+- nested lists/tuples
 """
 
 from __future__ import annotations
 from warnings import warn
 from typing import Any
+import numpy as np
 from pyqt_ext.tree import AbstractTreeItem
 
 
@@ -59,6 +64,10 @@ class KeyValueTreeItem(AbstractTreeItem):
         return self._value
     
     def setValue(self, value: Any) -> None:
+        # print(value, type(value), flush=True)
+        if isinstance(self._value, np.ndarray) and (isinstance(value, list) or isinstance(value, tuple)):
+            value = np.array(value)
+        
         self._value = value
 
         # update the parent key:value map to reflect the value change
@@ -104,7 +113,7 @@ class KeyValueTreeItem(AbstractTreeItem):
         elif isinstance(value, list):
             return f'{key}: []'
         else:
-            return f'{key}: {value}'
+            return f'{key}: {value} {type(value)}'
     
     def __str__(self) -> str:
         return self._tree_repr(lambda item: item.__repr__())
@@ -154,8 +163,16 @@ class KeyValueTreeItem(AbstractTreeItem):
                     if isinstance(existing_value, dict) or isinstance(existing_value, list):
                         if existing_value is not value:
                             self.setValue(value)
-                    elif existing_value != value:
-                        self.setValue(value)
+                    elif isinstance(existing_value, np.ndarray) or isinstance(value, np.ndarray):
+                        if np.issubdtype(existing_value.dtype, np.floating):
+                            if not np.allclose(value, existing_value):
+                                self.setValue(value)
+                        else:
+                            if not np.array_equal(value, existing_value):
+                                self.setValue(value)
+                    else:
+                        if existing_value != value:
+                            self.setValue(value)
             elif isinstance(new_parent_map, list):
                 index: int = self.siblingIndex()
                 value = self.value()
@@ -172,8 +189,16 @@ class KeyValueTreeItem(AbstractTreeItem):
                     if isinstance(existing_value, dict) or isinstance(existing_value, list):
                         if existing_value is not value:
                             self.setValue(value)
-                    elif existing_value != value:
-                        self.setValue(value)
+                    elif isinstance(existing_value, np.ndarray) or isinstance(value, np.ndarray):
+                        if np.issubdtype(existing_value.dtype, np.floating):
+                            if not np.allclose(value, existing_value):
+                                self.setValue(value)
+                        else:
+                            if not np.array_equal(value, existing_value):
+                                self.setValue(value)
+                    else:
+                        if existing_value != value:
+                            self.setValue(value)
     
     def insertChild(self, index: int, child: KeyValueTreeItem) -> None:
         if not (0 <= index <= len(self.children)):
@@ -199,6 +224,7 @@ class KeyValueTreeItem(AbstractTreeItem):
 
 
 def test_tree():
+    import json
     tree = {
         'a': 1,
         'b': [4, 8, 9, 5, 7, 99],
@@ -211,12 +237,13 @@ def test_tree():
                 'g': 5,
             },
         },
+        'nd': np.array([[1, 2, 3], [4, 5, 6]]),
     }
+    # print(json.dumps(tree, indent='    '))
     root = KeyValueTreeItem(None, tree)
     print('-'*82)
     print(root)
-    import json
-    print(json.dumps(tree, indent='    '))
+    # print(json.dumps(tree, indent='    '))
 
     print('-'*82)
     print('remove /a')
@@ -271,6 +298,10 @@ def test_tree():
     print('/c -> {a:1, b:2}')
     c.setValue({'a': 1, 'b': 2})
     print(root)
+
+    print('-'*82)
+    print('/nd')
+    print(root['/nd'])
 
 
 if __name__ == '__main__':

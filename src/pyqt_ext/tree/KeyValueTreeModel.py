@@ -5,6 +5,7 @@ Supports drag-and-drop within and between models in the same program/process.
 """
 
 from __future__ import annotations
+import numpy as np
 from qtpy.QtCore import *
 from qtpy.QtGui import *
 from qtpy.QtWidgets import *
@@ -71,7 +72,21 @@ class KeyValueTreeModel(AbstractTreeModel):
                 return item.key()
             elif index.column() == 1:
                 if item.isLeaf():
-                    return item.value()
+                    value = item.value()
+                    if isinstance(value, np.ndarray):
+                        value = ndarray_to_tuple(value)
+                    else:
+                        try:
+                            # a numpy value
+                            dtype = value.dtype
+                            if np.issubdtype(dtype, np.floating):
+                                value = float(value)
+                            elif np.issubdtype(dtype, np.integer):
+                                value = int(value)
+                        except:
+                            # not a numpy value
+                            pass
+                    return value
         elif role == Qt.ItemDataRole.DecorationRole:
             if index.column() == 0:
                 if item.isLeaf():
@@ -93,13 +108,23 @@ class KeyValueTreeModel(AbstractTreeModel):
                 return True
             elif index.column() == 1:
                 if item.isLeaf():
-                    # a basic value, not a key:value map
-                    item.setValue(value)
-                    self.dataChanged.emit(index, index)
-                else:
-                    # a key:value map
-                    self.beginResetModel()
-                    item.setValue(value)
-                    self.endResetModel()
+                    # overwriting a basic value, not a key:value map
+                    if type(value) not in [list, dict]:
+                        # no change to tree structure
+                        item.setValue(value)
+                        self.dataChanged.emit(index, index)
+                        return True
+                # change to tree structure
+                # overwriting a key:value map
+                self.beginResetModel()
+                item.setValue(value)
+                self.endResetModel()
                 return True
         return False
+
+
+def ndarray_to_tuple(arr: np.ndarray):
+    if arr.shape == ():
+        return arr.item()
+    else:
+        return tuple(map(ndarray_to_tuple, arr))

@@ -216,6 +216,7 @@ def str_to_value(text: str) -> bool | int | float | str | tuple | list | dict:
 
 
 def test_live():
+    import numpy as np
     data = {
         'a': 1,
         'b': [4, 8, (1, 5.5, True, 'good'), 5, 7, 99, True, False, 'hi', 'bye'],
@@ -228,6 +229,8 @@ def test_live():
                 'g': 5,
             },
         },
+        '1d': np.array([1, 2, 3]),
+        'nd': np.array([[1, 2, 3], [4, 5, 6]]),
     }
 
     app = QApplication()
@@ -242,8 +245,10 @@ def test_live():
     # model.valueChanged.connect(lambda: print(model.root()))
     app.exec()
 
-    import json
-    print(json.dumps(data, indent='    '))
+    print(model.rootItem())
+
+    # import json
+    # print(json.dumps(data, indent='    '))
 
 if __name__ == '__main__':
     test_live()
