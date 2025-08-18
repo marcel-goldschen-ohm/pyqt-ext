@@ -275,14 +275,12 @@ class TreeView(QTreeView):
     
     def eventFilter(self, obj: QObject, event: QEvent) -> None:
         if event.type() == QEvent.Type.Wheel:
-            # modifiers: Qt.KeyboardModifier = event.modifiers()
-            # if Qt.KeyboardModifier.ControlModifier in modifiers \
-            # or Qt.KeyboardModifier.AltModifier in modifiers \
-            # or Qt.KeyboardModifier.MetaModifier in modifiers:
-            #     self.mouseWheelEvent(event)
-            #     return True
-            self.mouseWheelEvent(event)
-            return True
+            modifiers: Qt.KeyboardModifier = event.modifiers()
+            if Qt.KeyboardModifier.ControlModifier in modifiers \
+            or Qt.KeyboardModifier.AltModifier in modifiers \
+            or Qt.KeyboardModifier.MetaModifier in modifiers:
+                self.mouseWheelEvent(event)
+                return True
         # elif event.type() == QEvent.Type.FocusIn:
         #     print('FocusIn')
         #     # self.showDropIndicator(True)
