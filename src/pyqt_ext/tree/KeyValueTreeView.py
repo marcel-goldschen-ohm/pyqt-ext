@@ -237,6 +237,10 @@ def test_live():
     # root = KeyValueTreeItem(data)
     model = KeyValueTreeModel(data)
     view = KeyValueTreeView()
+<<<<<<< Updated upstream
+=======
+    view.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+>>>>>>> Stashed changes
     view.setModel(model)
     view.show()
     view.resize(QSize(800, 600))
