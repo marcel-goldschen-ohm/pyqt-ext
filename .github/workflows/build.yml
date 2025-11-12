@@ -25,12 +25,15 @@ jobs:
       with:
         version: "0.9.8" # uv version
         python-version: "3.12"
-    
-    - name: Install the project
-      run: uv sync --locked --all-extras
 
     - name: Install Hatch and uv-dynamic-versioning
+      # for dynamic version resolution from git tag
       run: uv pip install hatch uv-dynamic-versioning
+    
+    - name: Install the project
+      # sync needs dynamic version resolution build tools
+      # sync without deleting build tools we just installed (--inexact)
+      run: uv sync --locked --all-extras --dev --inexact
     
     - name: Build package
       run: uv build
