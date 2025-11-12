@@ -1,4 +1,4 @@
-name: publish-to-pypi
+name: build
 
 on:
   release:
@@ -35,6 +35,3 @@ jobs:
     
     - name: Build package
       run: uv build
-    
-    - name: Publish package to PyPI
-      run: uv publish

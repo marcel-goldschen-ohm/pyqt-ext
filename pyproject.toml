@@ -1,23 +1,23 @@
 [build-system]
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
 
 [project]
 name = "pyqt-ext"
-description = "Collection of PyQt widgets/tools"
 dynamic = ["version"]
-requires-python = ">=3.10"
-dependencies = [
-    "numpy>=1.26.2",
-    "QtPy>=2.4.1",
-    "QtAwesome>=1.4.0",
-    "pyqtgraph>=0.13.3",
-]
+description = "Collection of PyQt widgets/tools"
 authors = [
     {name = "Marcel Goldschen-Ohm", email = "goldschen-ohm@utexas.edu"},
 ]
 readme = "README.md"
 keywords = ["PyQt", "PySide", "pyqtgraph"]
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "QtPy",
+    "QtAwesome",
+    "pyqtgraph",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -30,8 +30,5 @@ homepage = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
 repository = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
 issues = "https://github.com/marcel-goldschen-ohm/pyqt-ext/issues"
 
-[tool.pdm]
-distribution = true
-
-[tool.pdm.version]
-source = "scm"
+[tool.uv-dynamic-versioning]
+fallback-version = "0.0.0"
