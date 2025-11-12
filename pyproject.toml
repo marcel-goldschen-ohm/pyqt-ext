@@ -1,6 +1,6 @@
 [project]
 name = "pyqt-ext"
-dynamic = ["version"]
+version = "v2025.11.12"
 description = "Collection of PyQt widgets/tools"
 authors = [
     {name = "Marcel Goldschen-Ohm", email = "goldschen-ohm@utexas.edu"},
@@ -27,11 +27,5 @@ repository = "https://github.com/marcel-goldschen-ohm/pyqt-ext"
 issues = "https://github.com/marcel-goldschen-ohm/pyqt-ext/issues"
 
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning"]
-build-backend = "hatchling.build"
-
-[tool.hatch.version]
-source = "uv-dynamic-versioning"
-
-[tool.uv-dynamic-versioning]
-fallback-version = "0.0.0"
+requires = ["uv_build"]
+build-backend = "uv_build"
